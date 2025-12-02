@@ -1,0 +1,88 @@
+#include "../include/Drawer.h"
+#include "../include/Log.h"
+#include "../secrets/Secrets.h"
+
+#include "uGUI.h"
+#include "font_4x6.h"
+#include "font_5x12.h"
+#include "st7735s_drv.h"
+#include "yahal_String.h"
+#include <cstring> 
+
+Drawer::Drawer(st7735s_drv& lcd)
+    : _gui(lcd), _lcd(lcd), defaultFont(FONT_5X12) {
+
+    _gui.SetForecolor(C_WHITE);
+    _gui.FontSelect(&defaultFont);
+
+    _lcd.clearScreen(0x0);
+}
+
+void Drawer::invertColor(const bool& invert){
+    _invert = invert;
+}
+
+void Drawer::colorArea(const uint8_t x1, const uint8_t y1, const uint8_t x2, const uint8_t y2){
+    _gui.FillFrame(x1, y1, x2, y2, C_CYAN);
+}
+
+void Drawer::drawTable(const List<Flight> &flightList, const uint8_t selected){
+    _lcd.clearScreen(0x0);
+    uint8_t x = 15; 
+    uint8_t y = 0;
+    char buff[4]; 
+    uint8_t counter = 1; 
+
+    _gui.PutString(x, y, "TOP 9 Flights");
+    y += 12;
+    for (const auto& flight : flightList){
+        _gui.DrawLine(0, y, 127, y, C_WHITE);
+        if (counter == selected){
+            colorArea(0, y, 15, y + 12);
+        }
+        ++y;
+        snprintf(buff, sizeof(buff), "%u", counter); 
+        _gui.PutString(x, y, buff);
+        x += 12;
+        _gui.PutString(x, y, flight.getFromIata());
+        x += 30;
+        _gui.PutString(x, y, flight.getToIata());
+        x += 30;
+        _gui.PutString(x, y, flight.getFlightNumber());
+        
+        x = 15;
+        y += 12; 
+        ++counter;
+
+        if (counter > 9) break;
+    }
+    _gui.DrawLine(x, y, 127, y, C_WHITE);
+}
+
+void Drawer::clearArea(const uint8_t x1, const uint8_t y1, const uint8_t x2, const uint8_t y2){
+    uint8_t diffX = x1 - x2;
+    uint8_t diffY = y1 - y2;
+    if (diffX < 4) 
+        logWarning("Difference between x is smaller than the smallest font -> overwirting");
+
+    if (diffY < 6) 
+        logWarning("Difference between y is smaller than the smallest font -> overwirting");
+
+    _gui.FontSelect(&FONT_4X6);
+    uint8_t widh = diffX / 4;
+    uint8_t hight = diffY / 6;
+
+    const uint16_t size = (hight * widh) + hight + 1;
+    char* buff = new char[size];
+    uint16_t p = 0;
+    for (uint8_t i = 0; i < hight; ++i){
+        for (uint8_t j = 0; j < widh; ++j){
+            buff[p++] = ' ';
+        }
+        buff[p++] = '\0';
+    }
+    buff[p] = '\0';
+    _gui.PutString(x1, y1, buff);
+    delete buff;
+    _gui.FontSelect(&defaultFont);
+}
