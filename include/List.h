@@ -1,6 +1,8 @@
 #ifndef LIST_H
 #define LIST_H
 
+#include "Log.h"
+
 #include <memory>
 #include <stdexcept>
 #include <utility>
@@ -32,7 +34,7 @@ public:
         Iterator(Node* ptr) : current(ptr) {}
 
         reference operator*() const {
-            if (!current) throw std::out_of_range("Invalid iterator.");
+            if (!current) logError("Invalid iterator.");
             return current->data;
         }
 
@@ -120,7 +122,7 @@ public:
 
     T& get(int index) {
         if (index < 0 || index >= count) {
-            throw std::out_of_range("Index out of range.");
+            logError("Index out of range.");
         }
         Node* current = root.get();
         for (int i = 0; i < index; ++i) {

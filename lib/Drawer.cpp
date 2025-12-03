@@ -44,11 +44,11 @@ void Drawer::drawTable(const List<Flight> &flightList, const uint8_t selected){
         snprintf(buff, sizeof(buff), "%u", counter); 
         _gui.PutString(x, y, buff);
         x += 12;
-        _gui.PutString(x, y, flight.getFromIata());
+        _gui.PutString(x, y, flight.fromIata.c_str());
         x += 30;
-        _gui.PutString(x, y, flight.getToIata());
+        _gui.PutString(x, y, flight.toIata.c_str());
         x += 30;
-        _gui.PutString(x, y, flight.getFlightNumber());
+        _gui.PutString(x, y, flight.flightNumber.c_str());
         
         x = 15;
         y += 12; 
@@ -85,4 +85,14 @@ void Drawer::clearArea(const uint8_t x1, const uint8_t y1, const uint8_t x2, con
     _gui.PutString(x1, y1, buff);
     delete buff;
     _gui.FontSelect(&defaultFont);
+}
+
+void Drawer::drawSpecifigFlightInformation(SpecificFlightData &flightData){
+    auto t = flightData.trail.get(0);
+    logNumber(t.alt);
+    logNumber(t.spd);
+    logInfo(flightData.aircraftModel.text.c_str());
+    logInfo(flightData.airline.airlineName.c_str());
+    logInfo(flightData.callsign.c_str());
+    logNumber(flightData.times.estimatedArrival);
 }

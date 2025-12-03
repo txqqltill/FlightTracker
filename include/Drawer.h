@@ -2,7 +2,8 @@
 #define DRAWER_H
 
 #include "List.h"
-#include "Flight.h"
+#include "../FlightData/Flight.h"
+#include "../FlightData/SpecificFlight.h"
 
 #include "uGUI.h"
 #include "st7735s_drv.h"
@@ -20,6 +21,7 @@ public:
     Drawer(st7735s_drv& lcd);
     void invertColor(const bool& invert);
     void drawTable(const List<Flight> &flightList, const uint8_t selected);
+    void drawSpecifigFlightInformation(SpecificFlightData &flightData);
 };
 
 #endif // DRAWER_H

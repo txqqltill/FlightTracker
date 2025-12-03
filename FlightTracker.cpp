@@ -1,7 +1,6 @@
 #include "include/Joystick.h"
 #include "include/Log.h"
 #include "include/List.h"
-#include "include/Flight.h"
 #include "include/Drawer.h"
 #include "include/JSONConverter.h"
 #include "TestData.h"
@@ -32,6 +31,8 @@ int main(){
     Joystick joy;
 
     drawer.drawTable(flights, start_index);
+    auto t = parseJsonToSpecificFlightData(JSON_SPECIFIC_FLIGHT_DATA);
+    drawer.drawSpecifigFlightInformation(t);
 
     while (1)
     {
