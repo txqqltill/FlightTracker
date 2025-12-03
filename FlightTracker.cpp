@@ -2,10 +2,11 @@
 #include "include/Log.h"
 #include "include/List.h"
 #include "include/Drawer.h"
-#include "include/JSONConverter.h"
-#include "TestData.h"
+#include "include/Button.h"
+#include "include/API.h"
 
 #include "spi_rp2350.h"
+#include "boostxl_eduMKII.h"
 
 #define DISPLAY_LIMIT 9
 
@@ -24,15 +25,17 @@ int main(){
     st7735s_drv lcd(spi, lcd_rst, lcd_dc, st7735s_drv::Crystalfontz_128x128);
 
     Drawer drawer(lcd);
-    List<Flight> flights = parseJsonToFlightList(JSON_FLIGHT_DATA);
 
     uint8_t start_index = 1;
     
     Joystick joy;
 
+    Button s1(EDU_BUTTON1);
+    Button s2(EDU_BUTTON2);
+    bool inSubMenu = false;
+    API api;
+    List<Flight> flights = api.getTopFlights();
     drawer.drawTable(flights, start_index);
-    auto t = parseJsonToSpecificFlightData(JSON_SPECIFIC_FLIGHT_DATA);
-    drawer.drawSpecifigFlightInformation(t);
 
     while (1)
     {
@@ -40,7 +43,20 @@ int main(){
         bool up = joy.yMovedUp();
         bool draw_needed = false;
         
-        if (down) {
+        if (s1.pressed()){
+            inSubMenu = true;
+            Flight flight = flights.get(start_index - 1);
+            auto id = flight.flightId;
+            SpecificFlightData data = api.getSpecificFlightData(flight.flightId);
+            drawer.drawSpecifigFlightInformation(data);
+        }
+
+        if (s2.pressed()){
+            inSubMenu = false;
+            draw_needed = true;
+        }
+
+        if (down && inSubMenu == false) {
             if (start_index < DISPLAY_LIMIT) {
                 start_index++;
                 draw_needed = true;
@@ -48,7 +64,7 @@ int main(){
             }
         }
         
-        if (up) {
+        if (up && inSubMenu == false) {
             if (start_index > 1) {
                 start_index--;
                 draw_needed = true;

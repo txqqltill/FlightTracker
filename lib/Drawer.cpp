@@ -1,6 +1,7 @@
 #include "../include/Drawer.h"
 #include "../include/Log.h"
 #include "../secrets/Secrets.h"
+#include "../include/MeasurementsConverter.h"
 
 #include "uGUI.h"
 #include "font_4x6.h"
@@ -28,7 +29,7 @@ void Drawer::colorArea(const uint8_t x1, const uint8_t y1, const uint8_t x2, con
 
 void Drawer::drawTable(const List<Flight> &flightList, const uint8_t selected){
     _lcd.clearScreen(0x0);
-    uint8_t x = 15; 
+    uint8_t x = 5;
     uint8_t y = 0;
     char buff[4]; 
     uint8_t counter = 1; 
@@ -38,7 +39,7 @@ void Drawer::drawTable(const List<Flight> &flightList, const uint8_t selected){
     for (const auto& flight : flightList){
         _gui.DrawLine(0, y, 127, y, C_WHITE);
         if (counter == selected){
-            colorArea(0, y, 15, y + 12);
+            colorArea(0, y, x, y + 12);
         }
         ++y;
         snprintf(buff, sizeof(buff), "%u", counter); 
@@ -48,9 +49,9 @@ void Drawer::drawTable(const List<Flight> &flightList, const uint8_t selected){
         x += 30;
         _gui.PutString(x, y, flight.toIata.c_str());
         x += 30;
-        _gui.PutString(x, y, flight.flightNumber.c_str());
+        _gui.PutString(x, y, flight.callsign.c_str());
         
-        x = 15;
+        x = 5;
         y += 12; 
         ++counter;
 
@@ -88,6 +89,13 @@ void Drawer::clearArea(const uint8_t x1, const uint8_t y1, const uint8_t x2, con
 }
 
 void Drawer::drawSpecifigFlightInformation(SpecificFlightData &flightData){
+    _lcd.clearScreen(0x0);
+    char buff[64]; 
+    _gui.PutString(0, 0, flightData.callsign.c_str());
+
+    snprintf(buff, sizeof(buff), "Airplane Model: %s", flightData.aircraftModel.code.c_str()); 
+    _gui.PutString(0, 15, buff);
+    auto firstTrail = flightData.trail.get(0);
     auto t = flightData.trail.get(0);
     logNumber(t.alt);
     logNumber(t.spd);
@@ -95,4 +103,5 @@ void Drawer::drawSpecifigFlightInformation(SpecificFlightData &flightData){
     logInfo(flightData.airline.airlineName.c_str());
     logInfo(flightData.callsign.c_str());
     logNumber(flightData.times.estimatedArrival);
+    delete buff;
 }

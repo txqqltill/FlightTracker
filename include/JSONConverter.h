@@ -3,6 +3,8 @@
 
 #include "../lib/cJSON.h"
 
+#define DEFAULTSTRING "N/A"
+
 String get_cjson_string(const cJSON* parent, const char* key) {
     cJSON* item = cJSON_GetObjectItemCaseSensitive(parent, key);
     
@@ -12,13 +14,30 @@ String get_cjson_string(const cJSON* parent, const char* key) {
             return String(value); 
         }
     }
-    return String(); 
+    return DEFAULTSTRING; 
 }
 
 int get_cjson_int(const cJSON* parent, const char* key) {
     cJSON* item = cJSON_GetObjectItemCaseSensitive(parent, key);
     if (item != nullptr && cJSON_IsNumber(item)) {
         return (int)item->valuedouble;
+    }
+    return 0;
+}
+
+
+double get_cjson_double(const cJSON* parent, const char* key) {
+    cJSON* item = cJSON_GetObjectItemCaseSensitive(parent, key);
+    if (item != nullptr && cJSON_IsNumber(item)) {
+        return item->valuedouble;
+    }
+    return 0.0;
+}
+
+int64_t get_cjson_int64(const cJSON* parent, const char* key) {
+    cJSON* item = cJSON_GetObjectItemCaseSensitive(parent, key);
+    if (item != nullptr && cJSON_IsNumber(item)) {
+        return (int64_t)item->valuedouble;
     }
     return 0;
 }
@@ -53,11 +72,6 @@ List<Flight> parseJsonToFlightList(const char* json_string) {
                 flight.toCity = get_cjson_string(flight_json, "to_city");
                 flight.toIata = get_cjson_string(flight_json, "to_iata");
                 flight.type = get_cjson_string(flight_json, "type");
-                if (flight.fromIata == "") flight.fromIata = "N/A";
-                if (flight.fromCity == "") flight.fromCity = "N/A"; 
-                if (flight.toIata == "") flight.toIata = "N/A";
-                if (flight.toCity == "") flight.toCity = "N/A";
-                if (flight.flightNumber == "") flight.flightNumber = "N/A";
                 
                 flight_list.add(flight); 
             }
@@ -69,28 +83,12 @@ List<Flight> parseJsonToFlightList(const char* json_string) {
     return flight_list;
 }
 
-double get_cjson_double(const cJSON* parent, const char* key) {
-    cJSON* item = cJSON_GetObjectItemCaseSensitive(parent, key);
-    if (item != nullptr && cJSON_IsNumber(item)) {
-        return item->valuedouble;
-    }
-    return 0.0;
-}
-
-int64_t get_cjson_int64(const cJSON* parent, const char* key) {
-    cJSON* item = cJSON_GetObjectItemCaseSensitive(parent, key);
-    if (item != nullptr && cJSON_IsNumber(item)) {
-        return (int64_t)item->valuedouble;
-    }
-    return 0;
-}
-
 SpecificFlightData parseJsonToSpecificFlightData(const char* json_string) {
-    
     cJSON* root = cJSON_Parse(json_string);
     SpecificFlightData flightData;
 
     if (root == nullptr) {
+        logWarning("root == nullptr");
         return flightData;
     }
 
@@ -102,10 +100,8 @@ SpecificFlightData parseJsonToSpecificFlightData(const char* json_string) {
     cJSON* aircraft = cJSON_GetObjectItemCaseSensitive(root, "aircraft");
     if (aircraft) {
         cJSON* model = cJSON_GetObjectItemCaseSensitive(aircraft, "model");
-        if (model) {
-            flightData.aircraftModel.code = get_cjson_string(model, "code");
-            flightData.aircraftModel.text = get_cjson_string(model, "text");
-        }
+        flightData.aircraftModel.code = get_cjson_string(model, "code");
+        flightData.aircraftModel.text = get_cjson_string(model, "text");
     }
 
     cJSON* airline = cJSON_GetObjectItemCaseSensitive(root, "airline");
