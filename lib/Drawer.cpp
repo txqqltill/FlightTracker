@@ -96,6 +96,19 @@ void Drawer::drawSpecifigFlightInformation(SpecificFlightData &flightData){
     snprintf(buff, sizeof(buff), "Airplane Model: %s", flightData.aircraftModel.code.c_str()); 
     _gui.PutString(0, 15, buff);
     auto firstTrail = flightData.trail.get(0);
+    int32_t alt = firstTrail.alt;
+    int32_t temp[2];
+    footToM(alt, temp);
+    snprintf(buff, sizeof(buff), "Height: %li ft | %ld.%02ld m", alt, temp[0], temp[1]);
+    _gui.PutString(0, 30, buff);
+    int32_t spd = firstTrail.spd;
+    knotsToKmH(spd, temp);
+
+    snprintf(buff, sizeof(buff), "Speed: %ld knt | %ld.%02ld km/h", spd, temp[0], temp[1]);
+    logInfo(buff);
+    _gui.PutString(0, 45, buff);
+
+
     auto t = flightData.trail.get(0);
     logNumber(t.alt);
     logNumber(t.spd);
