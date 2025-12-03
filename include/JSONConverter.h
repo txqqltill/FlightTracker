@@ -59,6 +59,11 @@ List<Flight> parseJsonToFlightList(const char* json_string) {
                 String toCity = get_cjson_string(flight_json, "to_city");
                 String toIata = get_cjson_string(flight_json, "to_iata");
                 String type = get_cjson_string(flight_json, "type");
+                if (fromIata == "") fromIata = "N/A";
+                if (fromCity == "") fromCity = "N/A"; 
+                if (toIata == "") toIata = "N/A";
+                if (toCity == "") toCity = "N/A";
+                if (flightNumber == "") flightNumber = "N/A";
                 
                 Flight flight(
                     callsign, 
