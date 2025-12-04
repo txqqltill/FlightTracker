@@ -87,7 +87,6 @@ public:
     ~List() = default;
 
     List(const List&) = delete;
-    List& operator=(const List&) = delete;
     
     List(List&& other) noexcept 
         : root(std::move(other.root)), 
@@ -152,6 +151,16 @@ public:
     }
     ConstIterator end() const {
         return ConstIterator(nullptr);
+    }
+
+    List& operator=(const List<T> &list){
+        if (this != &list){
+            this->clear();
+            for (const auto& item : list){
+                this->add(item);
+            }
+        }
+        return *this;
     }
 };
 
