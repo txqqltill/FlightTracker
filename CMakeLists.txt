@@ -12,7 +12,7 @@ add_executable(FlightTracker
     FlightTracker.cpp
     lib/Joystick.cpp
     lib/Drawer.cpp
-    lib/cJson.c
+    extern/cJson.c
 )
 
 # Add YAHAL

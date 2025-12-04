@@ -1,7 +1,7 @@
 #ifndef JSONCONVERTER_H
 #define JSONCONVERTER_H
 
-#include "../lib/cJSON.h"
+#include "../extern/cJSON.h"
 
 #define DEFAULTSTRING "N/A"
 
