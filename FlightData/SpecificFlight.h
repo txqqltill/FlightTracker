@@ -9,13 +9,12 @@
 
 #include "yahal_String.h"
 
-class SpecificFlightData {
-public:
+struct SpecificFlightData {
     String callsign;
     AircraftModel aircraftModel;
     Airline airline;
     FlightTime times; 
-    List<FlightTrackPoint> trail; 
+    List<FlightTrackPoint> trail;
 };
 
 #endif // SPECIFICFLIGHTDATA_H
