@@ -6,6 +6,8 @@
 #include "AircraftModel.h"
 #include "FlightTime.h"
 #include "Airline.h"
+#include "FlightHistory.h"
+#include "Airport/AirportData.h"
 
 #include "yahal_String.h"
 
@@ -15,6 +17,9 @@ struct SpecificFlightData {
     Airline airline;
     FlightTime times; 
     List<FlightTrackPoint> trail;
+    AirportData originAirport;
+    AirportData destinationAirport;
+    List<FlightHistoryEntry> flightHistory;
 };
 
 #endif // SPECIFICFLIGHTDATA_H

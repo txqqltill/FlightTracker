@@ -83,6 +83,84 @@ List<Flight> parseJsonToFlightList(const char* json_string) {
     return flight_list;
 }
 
+AirportPosition parseAirportPosition(cJSON* position_json) {
+    AirportPosition position;
+    if (position_json) {
+        position.latitude = get_cjson_double(position_json, "latitude");
+        position.longitude = get_cjson_double(position_json, "longitude");
+        position.altitude = get_cjson_int(position_json, "altitude");
+        cJSON* region = cJSON_GetObjectItemCaseSensitive(position_json, "region");
+        if (region) {
+            position.city = get_cjson_string(region, "city");
+        }
+        cJSON* country = cJSON_GetObjectItemCaseSensitive(position_json, "country");
+        if (country) {
+            position.countryName = get_cjson_string(country, "name");
+            position.countryCode = get_cjson_string(country, "code");
+        }
+    }
+    return position;
+}
+
+AirportData parseAirportData(cJSON* airport_json) {
+    AirportData data;
+    if (airport_json) {
+        data.name = get_cjson_string(airport_json, "name");
+        
+        cJSON* code = cJSON_GetObjectItemCaseSensitive(airport_json, "code");
+        if (code) {
+            data.code.iata = get_cjson_string(code, "iata");
+            data.code.city = get_cjson_string(code, "city");
+        }
+        
+        cJSON* position_json = cJSON_GetObjectItemCaseSensitive(airport_json, "position");
+        data.position = parseAirportPosition(position_json);
+        
+        cJSON* timezone = cJSON_GetObjectItemCaseSensitive(airport_json, "timezone");
+        if (timezone) {
+            data.timezoneName = get_cjson_string(timezone, "name");
+        }
+        
+        cJSON* info = cJSON_GetObjectItemCaseSensitive(airport_json, "info");
+        if (info) {
+            data.gate = get_cjson_string(info, "gate");
+        }
+    }
+    return data;
+}
+
+FlightHistoryEntry parseFlightHistoryEntry(cJSON* history_json) {
+    FlightHistoryEntry entry;
+    if (history_json) {
+        cJSON* identification = cJSON_GetObjectItemCaseSensitive(history_json, "identification");
+        if (identification) {
+            entry.flightId = get_cjson_string(identification, "id");
+            cJSON* number = cJSON_GetObjectItemCaseSensitive(identification, "number");
+            if (number) {
+                entry.flightNumber = get_cjson_string(number, "default");
+            }
+        }
+        
+        cJSON* time = cJSON_GetObjectItemCaseSensitive(history_json, "time");
+        if (time) {
+            cJSON* real = cJSON_GetObjectItemCaseSensitive(time, "real");
+            if (real) {
+                entry.realDepartureTime = get_cjson_int64(real, "departure");
+            }
+        }
+        
+        cJSON* airport = cJSON_GetObjectItemCaseSensitive(history_json, "airport");
+        if (airport) {
+            cJSON* origin = cJSON_GetObjectItemCaseSensitive(airport, "origin");
+            entry.originAirport = parseAirportData(origin);
+            
+            cJSON* destination = cJSON_GetObjectItemCaseSensitive(airport, "destination");
+            entry.destinationAirport = parseAirportData(destination);
+        }
+    }
+    return entry;
+}
+
 SpecificFlightData parseJsonToSpecificFlightData(const char* json_string) {
     cJSON* root = cJSON_Parse(json_string);
     SpecificFlightData flightData;
@@ -129,6 +207,30 @@ SpecificFlightData parseJsonToSpecificFlightData(const char* json_string) {
             flightData.times.estimatedArrival = get_cjson_int64(estimated, "arrival");
         }
     }
+    
+    cJSON* airport = cJSON_GetObjectItemCaseSensitive(root, "airport");
+    if (airport) {
+        cJSON* origin = cJSON_GetObjectItemCaseSensitive(airport, "origin");
+        flightData.originAirport = parseAirportData(origin);
+        
+        cJSON* destination = cJSON_GetObjectItemCaseSensitive(airport, "destination");
+        flightData.destinationAirport = parseAirportData(destination);
+    }
+    
+    cJSON* history = cJSON_GetObjectItemCaseSensitive(root, "flightHistory");
+    if (history) {
+        cJSON* aircraft_array = cJSON_GetObjectItemCaseSensitive(history, "aircraft");
+        if (aircraft_array != nullptr && cJSON_IsArray(aircraft_array)) {
+            cJSON* history_entry_json = nullptr;
+            cJSON_ArrayForEach(history_entry_json, aircraft_array) {
+                if (cJSON_IsObject(history_entry_json)) {
+                    FlightHistoryEntry entry = parseFlightHistoryEntry(history_entry_json);
+                    flightData.flightHistory.add(entry);
+                }
+            }
+        }
+    }
+
 
     cJSON* trail_array = cJSON_GetObjectItemCaseSensitive(root, "trail");
     if (trail_array != nullptr && cJSON_IsArray(trail_array)) {
