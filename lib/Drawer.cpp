@@ -9,6 +9,7 @@
 #include "st7735s_drv.h"
 #include "yahal_String.h"
 #include <cstring> 
+#include <utility>
 
 Drawer::Drawer(st7735s_drv& lcd)
     : _gui(lcd), _lcd(lcd), defaultFont(FONT_5X12) {
@@ -17,10 +18,6 @@ Drawer::Drawer(st7735s_drv& lcd)
     _gui.FontSelect(&defaultFont);
 
     _lcd.clearScreen(0x0);
-}
-
-void Drawer::invertColor(const bool& invert){
-    _invert = invert;
 }
 
 void Drawer::colorArea(const uint8_t x1, const uint8_t y1, const uint8_t x2, const uint8_t y2){
@@ -84,37 +81,101 @@ void Drawer::clearArea(const uint8_t x1, const uint8_t y1, const uint8_t x2, con
     }
     buff[p] = '\0';
     _gui.PutString(x1, y1, buff);
-    delete buff;
     _gui.FontSelect(&defaultFont);
 }
 
-void Drawer::drawSpecifigFlightInformation(SpecificFlightData &flightData){
+void Drawer::drawSubPage(const uint8_t &pageCounter){
     _lcd.clearScreen(0x0);
-    char buff[64]; 
-    _gui.PutString(0, 0, flightData.callsign.c_str());
+    char buff[64];
 
-    snprintf(buff, sizeof(buff), "Airplane Model: %s", flightData.aircraftModel.code.c_str()); 
-    _gui.PutString(0, 15, buff);
-    auto firstTrail = flightData.trail.get(0);
-    int32_t alt = firstTrail.alt;
-    int32_t temp[2];
-    footToM(alt, temp);
-    snprintf(buff, sizeof(buff), "Height: %li ft | %ld.%02ld m", alt, temp[0], temp[1]);
-    _gui.PutString(0, 30, buff);
-    int32_t spd = firstTrail.spd;
-    knotsToKmH(spd, temp);
+    drawSubPageTopBar();
+    drawSubPageBottomBar(pageCounter);
 
-    snprintf(buff, sizeof(buff), "Speed: %ld knt | %ld.%02ld km/h", spd, temp[0], temp[1]);
-    logInfo(buff);
-    _gui.PutString(0, 45, buff);
+    if (pageCounter == 1){
+        _gui.PutString(0, 15, _flightData.aircraftModel.text.c_str());
+        _gui.DrawLine(0, 28, 127, 28, C_WHITE);
+        _gui.PutString(0, 30, _flightData.airline.airlineName.c_str());
+        _gui.DrawLine(0, 42, 127, 42, C_WHITE);
+        _gui.PutString(0, 45, _flightData.originAirport.name.c_str());
+        _gui.DrawLine(0, 72, 127, 72, C_WHITE);
+        _gui.PutString(0, 75, _flightData.destinationAirport.name.c_str());
+        snprintf(buff, sizeof(buff), "%s -> %s", _flightData.originAirport.gate.c_str(), 
+                                                 _flightData.destinationAirport.gate.c_str());
+        _gui.PutString(0, 117, buff);                         
+    }
+    else if (pageCounter == 2){
+        auto firstTrail = _flightData.trail.get(0);
+        int32_t alt = firstTrail.alt;
+        logNumber(alt);
+        int32_t temp[2];
+        footToM(alt, temp);
+        snprintf(buff, sizeof(buff), "%li ft", alt);
+        _gui.PutString(0, 15, buff);
+        snprintf(buff, sizeof(buff), "%ld.%02ld m", temp[0], temp[1]);
+        _gui.PutString(55, 15, buff);
 
-
-    auto t = flightData.trail.get(0);
-    logNumber(t.alt);
-    logNumber(t.spd);
-    logInfo(flightData.aircraftModel.text.c_str());
-    logInfo(flightData.airline.airlineName.c_str());
-    logInfo(flightData.callsign.c_str());
-    logNumber(flightData.times.estimatedArrival);
-    delete buff;
+        int32_t spd = firstTrail.spd;
+        knotsToKmH(spd, temp);
+        snprintf(buff, sizeof(buff), "%ld knt", spd);
+        _gui.PutString(0, 30, buff);
+        snprintf(buff, sizeof(buff), "%ld.%02ld km/h", temp[0], temp[1]);
+        _gui.PutString(55, 30, buff);
+        _gui.DrawLine(0, 41, 127, 41, C_WHITE);
+    }
+    else if (pageCounter == 3){
+        uint8_t y = 14;
+        _gui.PutString(0, 14, "Flight History:");
+        for (const auto &item : _flightData.flightHistory){
+            y += 12;
+            snprintf(buff, sizeof(buff), "%s -> %s", item.originAirport.code.iata.c_str(), item.destinationAirport.code.iata.c_str());
+            _gui.PutString(0, y, buff);
+        }
+    }
 }
+
+void Drawer::initSubPage(SpecificFlightData flightData){
+    _flightData = std::move(flightData);    
+    drawSubPage(1);
+}
+
+void Drawer::drawSubPageTopBar(){
+    _gui.DrawLine(0, 12, 127, 12, C_WHITE);
+    char buff[64];
+    snprintf(buff, sizeof(buff), "%s -> %s", _flightData.originAirport.code.iata.c_str(), 
+                                             _flightData.destinationAirport.code.iata.c_str());
+    _gui.PutString(0, 0, buff);
+    _gui.PutString(80, 0, _flightData.callsign.c_str());    
+}
+
+void Drawer::drawSubPageBottomBar(const uint8_t &pageCounter){
+    char buff[64];
+    snprintf(buff, sizeof(buff), "%i/%i", pageCounter, MAXSUBPAGE);
+    _gui.PutString(110, 117, buff);
+    _gui.DrawLine(105, 117, 105, 127, C_WHITE);
+    _gui.DrawLine(0, 116, 127, 116, C_WHITE);
+}
+    // char buff[64]; 
+    // _gui.PutString(0, 0, flightData.callsign.c_str());
+
+    // snprintf(buff, sizeof(buff), "Airplane: %s", flightData.aircraftModel.code.c_str()); 
+    // _gui.PutString(0, 15, buff);
+    // auto firstTrail = flightData.trail.get(0);
+    // int32_t alt = firstTrail.alt;
+    // int32_t temp[2];
+    // footToM(alt, temp);
+    // snprintf(buff, sizeof(buff), "Height: %li ft | %ld.%02ld m", alt, temp[0], temp[1]);
+    // _gui.PutString(0, 30, buff);
+    // int32_t spd = firstTrail.spd;
+    // knotsToKmH(spd, temp);
+    // snprintf(buff, sizeof(buff), "->: %ld knt | %ld.%02ld km/h", spd, temp[0], temp[1]);
+    // _gui.PutString(0, 45, buff);
+
+
+    // auto t = flightData.trail.get(0);
+    // logNumber(t.alt);
+    // logNumber(t.spd);
+    // logInfo(flightData.aircraftModel.text.c_str());
+    // logInfo(flightData.airline.airlineName.c_str());
+    // logInfo(flightData.callsign.c_str());
+    // logNumber(flightData.times.estimatedArrival);
+    // delete buff;
