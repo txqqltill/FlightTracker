@@ -14,18 +14,25 @@
 class Joystick
 {
 private:
+    adc_rp2350_channel _joyX;
     adc_rp2350_channel _joyY;
+    uint16_t _offsetX = 0;
     uint16_t _offsetY = 0;
 
-    bool isJoyYUp();
-    bool isJoyYDown();
-    bool isJoyYNeutral();
+    bool isRight();
+    bool isLeft();
+    bool isUp();
+    bool isDown();
+    bool isXNeutral();
+    bool isYNeutral();
 
 public:
     Joystick();
 
-    bool yMovedUp();
-    bool yMovedDown();
+    bool MovedRight();
+    bool MovedLeft();
+    bool MovedUp();
+    bool MovedDown();
 };
 
 #endif // JOYSTICK_H
