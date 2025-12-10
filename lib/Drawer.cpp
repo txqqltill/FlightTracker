@@ -163,7 +163,7 @@ void Drawer::drawSubPage(const uint8_t &pageCounter){
     default:
         logError("Page not in range");
         break;
-}
+    }
 }
 
 void Drawer::initSubPage(SpecificFlightData flightData){
