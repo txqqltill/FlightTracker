@@ -21,6 +21,11 @@ private:
     void colorArea(const uint8_t x1, const uint8_t y1, const uint8_t x2, const uint8_t y2);
     void drawSubPageTopBar();
     void drawSubPageBottomBar(const uint8_t &pageCounter);
+    void drawSubPage1();
+    void drawSubPage2();
+    void drawSubPage3();
+    void drawSubPage4();
+    void drawSubPage5();
 public:
     Drawer(st7735s_drv& lcd);
     void drawTable(const List<Flight> &flightList, const uint8_t selected);
