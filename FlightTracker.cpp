@@ -38,8 +38,7 @@ int main(){
     List<Flight> flights = api.getTopFlights();
     drawer.drawTable(flights, index);
 
-    while (1)
-    {
+    while (1) {
         bool right = joy.MovedRight();
         bool left = joy.MovedLeft();
         bool down = joy.MovedDown();
@@ -47,7 +46,6 @@ int main(){
         bool draw_needed = false;
 
         if (s1.pressed() && subPageCounter == 0){
-            logInfo("S1");
             inSubMenu = true;
             subPageCounter = 1;
             Flight flight = flights.get(index - 1);
@@ -57,7 +55,6 @@ int main(){
         }
 
         if (s2.pressed() && subPageCounter != 0){
-            logInfo("S2");
             inSubMenu = false;
             draw_needed = true;
             subPageCounter = 0;
@@ -67,7 +64,6 @@ int main(){
             if (index < DISPLAY_LIMIT) {
                 index++;
                 draw_needed = true;
-                logNumber(index);
             }
         }
 
@@ -76,7 +72,6 @@ int main(){
             if (subPageCounter > MAXSUBPAGE) 
                 subPageCounter = MAXSUBPAGE;
 
-            logNumber(subPageCounter);
             drawer.drawSubPage(subPageCounter);
         }
 
@@ -85,7 +80,6 @@ int main(){
             if (subPageCounter <= 0)
                 subPageCounter = 1;
             
-            logNumber(subPageCounter);
             drawer.drawSubPage(subPageCounter);
         }
         
@@ -93,7 +87,6 @@ int main(){
             if (index > 1) {
                 index--;
                 draw_needed = true;
-                logNumber(index);
             }
         }
 
