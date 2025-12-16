@@ -11,6 +11,8 @@
 #include <cstring> 
 #include <utility>
 
+#define MAXCHARSINLINE 21
+
 Drawer::Drawer(st7735s_drv& lcd)
     : _gui(lcd), _lcd(lcd), defaultFont(FONT_5X12) {
 
@@ -86,13 +88,42 @@ void Drawer::clearArea(const uint8_t x1, const uint8_t y1, const uint8_t x2, con
 
 void Drawer::drawSubPage1(){
     char buff[64];
-    _gui.PutString(0, 15, _flightData.aircraftModel.text.c_str());
+
+    const char* aircraft = _flightData.aircraftModel.text.c_str();
+    if (strlen(aircraft) > MAXCHARSINLINE){
+        snprintf(buff, sizeof(buff), "Only the first %i Chars of %s will be displayed", MAXCHARSINLINE, aircraft);
+        logInfo(buff);
+    }
+    snprintf(buff, sizeof(buff), "%.21s", aircraft);
+    _gui.PutString(0, 15, buff);
     _gui.DrawLine(0, 28, 127, 28, C_WHITE);
-    _gui.PutString(0, 30, _flightData.airline.airlineName.c_str());
-    _gui.DrawLine(0, 42, 127, 42, C_WHITE);
-    _gui.PutString(0, 45, _flightData.originAirport.name.c_str());
-    _gui.DrawLine(0, 72, 127, 72, C_WHITE);
-    _gui.PutString(0, 75, _flightData.destinationAirport.name.c_str());
+
+    const char* airline = _flightData.airline.airlineName.c_str();
+    if (strlen(airline) > MAXCHARSINLINE * 2){
+        snprintf(buff, sizeof(buff), "Only the first %i Chars of '%s' will be displayed", MAXCHARSINLINE, airline);
+        logInfo(buff);
+    }
+    snprintf(buff, sizeof(buff), "%.42s", airline);
+    _gui.PutString(0, 30, buff);
+    _gui.DrawLine(0, 57, 127, 57, C_WHITE);
+
+    const char* origienAirport = _flightData.originAirport.name.c_str();
+    if (strlen(origienAirport) > MAXCHARSINLINE * 2){
+        snprintf(buff, sizeof(buff), "Only the first %i Chars of '%s' will be displayed", MAXCHARSINLINE * 2, origienAirport);
+        logInfo(buff);
+    }
+    snprintf(buff, sizeof(buff), "%.42s", origienAirport);
+    _gui.PutString(0, 60, buff);
+    _gui.DrawLine(0, 87, 127, 87, C_WHITE);
+
+    const char* destinationAirport = _flightData.destinationAirport.name.c_str();
+    if (strlen(destinationAirport) > MAXCHARSINLINE * 2){
+        snprintf(buff, sizeof(buff), "Only the first %i Chars of '%s' will be displayed", MAXCHARSINLINE * 2, destinationAirport);
+        logInfo(buff);
+    }
+    snprintf(buff, sizeof(buff), "%.42s", destinationAirport);
+    _gui.PutString(0, 90, buff);
+
     snprintf(buff, sizeof(buff), "%s -> %s", _flightData.originAirport.gate.c_str(), 
                                              _flightData.destinationAirport.gate.c_str());
     _gui.PutString(0, 117, buff);     
