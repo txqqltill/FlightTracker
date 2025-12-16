@@ -2,6 +2,8 @@
 #define JSONCONVERTER_H
 
 #include "../extern/cJSON.h"
+#include "FlightTimeConverter.h"
+#include <ctime>
 
 #define DEFAULTSTRING "N/A"
 
@@ -25,7 +27,6 @@ int get_cjson_int(const cJSON* parent, const char* key) {
     return 0;
 }
 
-
 double get_cjson_double(const cJSON* parent, const char* key) {
     cJSON* item = cJSON_GetObjectItemCaseSensitive(parent, key);
     if (item != nullptr && cJSON_IsNumber(item)) {
@@ -34,12 +35,12 @@ double get_cjson_double(const cJSON* parent, const char* key) {
     return 0.0;
 }
 
-int64_t get_cjson_int64(const cJSON* parent, const char* key) {
+std::time_t get_cjson_time_t(const cJSON* parent, const char* key) {
     cJSON* item = cJSON_GetObjectItemCaseSensitive(parent, key);
     if (item != nullptr && cJSON_IsNumber(item)) {
-        return (int64_t)item->valuedouble;
+        return (std::time_t)item->valuedouble;
     }
-    return 0;
+    return 0; 
 }
 
 List<Flight> parseJsonToFlightList(const char* json_string) {
@@ -162,7 +163,7 @@ FlightHistoryEntry parseFlightHistoryEntry(cJSON* history_json) {
         if (time) {
             cJSON* real = cJSON_GetObjectItemCaseSensitive(time, "real");
             if (real) {
-                entry.realDepartureTime = get_cjson_int64(real, "departure");
+                entry.realDepartureTime = get_cjson_time_t(real, "departure");
             }
         }
         
@@ -214,21 +215,30 @@ SpecificFlightData parseJsonToSpecificFlightData(const char* json_string) {
 
     cJSON* time = cJSON_GetObjectItemCaseSensitive(root, "time");
     if (time) {
+        std::time_t ts;
+        
         cJSON* scheduled = cJSON_GetObjectItemCaseSensitive(time, "scheduled");
         if (scheduled) {
-            flightData.times.scheduledDeparture = get_cjson_int64(scheduled, "departure");
-            flightData.times.scheduledArrival = get_cjson_int64(scheduled, "arrival");
+            ts = get_cjson_time_t(scheduled, "departure");
+            flightData.times.scheduledDeparture = convert_timestamp_to_datetime(ts);
+            
+            ts = get_cjson_time_t(scheduled, "arrival");
+            flightData.times.scheduledArrival = convert_timestamp_to_datetime(ts);
         }
         
         cJSON* real = cJSON_GetObjectItemCaseSensitive(time, "real");
         if (real) {
-            flightData.times.realDeparture = get_cjson_int64(real, "departure"); 
-            flightData.times.realArrival = get_cjson_int64(real, "arrival");
+            ts = get_cjson_time_t(real, "departure"); 
+            flightData.times.realDeparture = convert_timestamp_to_datetime(ts);
+            
+            ts = get_cjson_time_t(real, "arrival");
+            flightData.times.realArrival = convert_timestamp_to_datetime(ts);
         }
         
         cJSON* estimated = cJSON_GetObjectItemCaseSensitive(time, "estimated");
         if (estimated) {
-            flightData.times.estimatedArrival = get_cjson_int64(estimated, "arrival"); 
+            ts = get_cjson_time_t(estimated, "arrival"); 
+            flightData.times.estimatedArrival = convert_timestamp_to_datetime(ts); 
         }
     }
     
@@ -266,7 +276,7 @@ SpecificFlightData parseJsonToSpecificFlightData(const char* json_string) {
                 point.lng = get_cjson_double(point_json, "lng");
                 point.alt = (int32_t)get_cjson_int(point_json, "alt");
                 point.spd = (int32_t)get_cjson_int(point_json, "spd");
-                point.ts = get_cjson_int64(point_json, "ts");
+                point.ts = get_cjson_time_t(point_json, "ts");
                 point.hd = (int32_t)get_cjson_int(point_json, "hd");
                 
                 flightData.trail.add(point);

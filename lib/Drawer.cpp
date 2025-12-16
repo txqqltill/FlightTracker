@@ -133,7 +133,6 @@ void Drawer::drawSubPage2(){
     char buff[64];
     auto firstTrail = _flightData.trail.get(0);
     int32_t alt = firstTrail.alt;
-    logNumber(alt);
     int32_t temp[2];
     footToM(alt, temp);
     snprintf(buff, sizeof(buff), "%li ft", alt);
@@ -153,7 +152,7 @@ void Drawer::drawSubPage2(){
 void Drawer::drawSubPage3(){
     char buff[64];
     uint8_t y = 14;
-    _gui.PutString(0, 14, "Flight History:");
+    _gui.PutString(0, y, "Flight History:");
     for (const auto &item : _flightData.flightHistory){
         y += 12;
         snprintf(buff, sizeof(buff), "%s -> %s", item.originAirport.code.iata.c_str(), item.destinationAirport.code.iata.c_str());
@@ -162,7 +161,57 @@ void Drawer::drawSubPage3(){
 }
 
 void Drawer::drawSubPage4(){
-    
+    uint8_t y = 14;
+    _gui.PutString(0, y, "Departure Times:");
+    y += 14;
+
+    char buff[64];
+    snprintf(buff, sizeof(buff), "SD: %02i.%02i.%i %02i:%02i",
+                                    _flightData.times.scheduledDeparture.day, 
+                                    _flightData.times.scheduledDeparture.month, 
+                                    _flightData.times.scheduledDeparture.year, 
+                                    _flightData.times.scheduledDeparture.hour, 
+                                    _flightData.times.scheduledDeparture.minute);
+    _gui.PutString(0, y, buff);
+
+    y += 14;
+    snprintf(buff, sizeof(buff), "AD: %02i.%02i.%i %02i:%02i",
+                                    _flightData.times.realDeparture.day, 
+                                    _flightData.times.realDeparture.month, 
+                                    _flightData.times.realDeparture.year, 
+                                    _flightData.times.realDeparture.hour, 
+                                    _flightData.times.realDeparture.minute);
+    _gui.PutString(0, y, buff);
+
+    y += 14;
+    _gui.PutString(0, y, "Arrival Times:");
+
+    y += 14;
+    snprintf(buff, sizeof(buff), "EA: %02i.%02i.%i %02i:%02i",
+                                    _flightData.times.estimatedArrival.day, 
+                                    _flightData.times.estimatedArrival.month, 
+                                    _flightData.times.estimatedArrival.year, 
+                                    _flightData.times.estimatedArrival.hour, 
+                                    _flightData.times.estimatedArrival.minute);
+    _gui.PutString(0, y, buff);
+
+    y += 14;
+    snprintf(buff, sizeof(buff), "SA: %02i.%02i.%i %02i:%02i",
+                                    _flightData.times.scheduledArrival.day, 
+                                    _flightData.times.scheduledArrival.month, 
+                                    _flightData.times.scheduledArrival.year, 
+                                    _flightData.times.scheduledArrival.hour, 
+                                    _flightData.times.scheduledArrival.minute);
+    _gui.PutString(0, y, buff);
+
+    y += 14;
+    snprintf(buff, sizeof(buff), "RA: %02i.%02i.%i %02i:%02i",
+                                    _flightData.times.realArrival.day, 
+                                    _flightData.times.realArrival.month, 
+                                    _flightData.times.realArrival.year, 
+                                    _flightData.times.realArrival.hour, 
+                                    _flightData.times.realArrival.minute);
+    _gui.PutString(0, y, buff);
 }
 
 void Drawer::drawSubPage5(){

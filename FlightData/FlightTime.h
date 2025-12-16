@@ -1,12 +1,14 @@
 #ifndef FLIGHTTIME_H
 #define FLIGHTTIME_H
 
+#include "DateTime.h"
+
 struct FlightTime {
-    uint32_t scheduledDeparture = 0;
-    uint32_t scheduledArrival = 0;
-    uint32_t realDeparture = 0;
-    uint32_t estimatedArrival = 0;
-    uint32_t realArrival = 0;
+    DateTime scheduledDeparture;
+    DateTime scheduledArrival;
+    DateTime realDeparture;
+    DateTime estimatedArrival;
+    DateTime realArrival;
 };
 
 #endif // FLIGHTTIME_H
