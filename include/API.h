@@ -11,10 +11,14 @@ class API
 public:
     List<Flight> getTopFlights() const{
         // TODO: Get JSON from API
+        logInfo("Featching top 10 flights");
         return parseJsonToFlightList(JSON_FLIGHT_DATA);
     }
 
     SpecificFlightData getSpecificFlightData(const String &flighId){
+        char buff[64];
+        snprintf(buff, sizeof(buff), "Featching specific Inforation for flightid '%s'", flighId.c_str());
+        logInfo(buff);
         SpecificFlightData result;
         if (flighId == "3d67e573") result = parseJsonToSpecificFlightData(JSON_SPECIFIC_FLIGHT_DATA_3d67e573);
         else if (flighId == "3d67ead9") result = parseJsonToSpecificFlightData(JSON_SPECIFIC_FLIGHT_DATA_3d67ead9);

@@ -4,9 +4,11 @@
 #include "include/Drawer.h"
 #include "include/Button.h"
 #include "include/API.h"
+#include "include/Timer.h"
 
 #include "spi_rp2350.h"
 #include "boostxl_eduMKII.h"
+#include "board.h"
 
 #define DISPLAY_LIMIT 9
 
@@ -32,10 +34,16 @@ int main(){
 
     Button s1(EDU_BUTTON1);
     Button s2(EDU_BUTTON2);
+    Button s3(S2_GPIO);
+
     bool inSubMenu = false;
     uint8_t subPageCounter = 0;
     API api;
     List<Flight> flights = api.getTopFlights();
+
+    Timer apiTimer(flights);
+    apiTimer.start();
+
     drawer.drawTable(flights, index);
 
     while (1) {
@@ -58,6 +66,11 @@ int main(){
             inSubMenu = false;
             draw_needed = true;
             subPageCounter = 0;
+        }
+
+        if (s3.pressed()){
+            apiTimer.reset();
+            flights = api.getTopFlights();
         }
 
         if (down && inSubMenu == false) {
