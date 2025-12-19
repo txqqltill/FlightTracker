@@ -1,6 +1,5 @@
 #include "../include/Drawer.h"
 #include "../include/Log.h"
-#include "../secrets/Secrets.h"
 #include "../include/MeasurementsConverter.h"
 
 #include "uGUI.h"

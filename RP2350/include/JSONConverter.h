@@ -1,7 +1,7 @@
 #ifndef JSONCONVERTER_H
 #define JSONCONVERTER_H
 
-#include "../extern/cJSON.h"
+#include "../../extern/cJSON.h"
 #include "FlightTimeConverter.h"
 #include <ctime>
 
