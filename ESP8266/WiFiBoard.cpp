@@ -25,6 +25,13 @@ void setup() {
     }
     
     digitalWrite(LED_BUILTIN, LOW);
+    
+    if (WiFi.status() == WL_CONNECTED) {
+        Serial.print("READY\x04");
+    } else {
+        Serial.print("WIFI_FAIL\x04");
+    }
+    
     delay(200);
     digitalWrite(LED_BUILTIN, HIGH);
 }
@@ -55,7 +62,6 @@ void streamFilteredJSON(WiFiClient* source, Stream* dest) {
             auto windowEndsWith = [&](const char* str) -> bool {
                 int len = strlen(str);
                 for (int i = 0; i < len; i++) {
-                    // Ringbuffer Logik rückwärts
                     int idx = (winIdx - 1 - i + 10) % 10;
                     if (window[idx] != str[len - 1 - i]) return false;
                 }

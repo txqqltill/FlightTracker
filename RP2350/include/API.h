@@ -50,7 +50,29 @@ public:
         esp_reset.gpioWrite(HIGH);
         
         printf("Warte auf ESP Boot & WiFi...\n");
-        task::sleep_ms(8000); 
+        
+        task::sleep_ms(2500); 
+        
+        _rx_idx = 0;
+        _data_ready = false;
+        memset(_raw_rx_buffer, 0, RX_BUF_SIZE);
+        
+        int timeout = 0;
+        while (_data_ready == false && timeout < 1500) { 
+            task::sleep_ms(10);
+            timeout++;
+        }
+
+        if (_data_ready) {
+            if (strstr(_raw_rx_buffer, "READY") != nullptr) {
+                printf("ESP Verbunden und Bereit!\n");
+            } else {
+                printf("ESP Fehler/Unbekannt: %s\n", _raw_rx_buffer);
+            }
+            _data_ready = false;
+        } else {
+            printf("ESP Timeout nach Wartezeit!\n");
+        }
     }
 
     List<Flight> getTopFlights() {
@@ -123,4 +145,4 @@ public:
 char API::_raw_rx_buffer[RX_BUF_SIZE];
 volatile int API::_rx_idx = 0;
 
-#endif
+#endif // API_H
