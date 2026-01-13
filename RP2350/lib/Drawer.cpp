@@ -278,6 +278,6 @@ void Drawer::drawSubPageBottomBar(const uint8_t &pageCounter){
 void Drawer::connectWifi(){
     _lcd.clearScreen(0x0);
     char buff[64];
-    sniprintf(buff, sizeof(buff), "ESP32 is connecting to the wifi '%s'", WIFI);
+    sniprintf(buff, sizeof(buff), "ESP8266 is connecting to the wifi '%s'", WIFI);
     _gui.PutString(0, 0, buff);
 }

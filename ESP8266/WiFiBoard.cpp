@@ -12,7 +12,7 @@ void setup() {
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, HIGH); 
     
-    Serial.begin(115200);
+    Serial.begin(460800);
     inputString.reserve(200);
     
     WiFi.mode(WIFI_STA);

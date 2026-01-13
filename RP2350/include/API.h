@@ -2,6 +2,7 @@
 #define API_H
 
 #include "../TestData.h"
+#include "../FlightData/CacheEntry.h"
 #include "JSONConverter.h"
 
 #include "yahal_String.h"
@@ -25,8 +26,10 @@ private:
     static volatile int _rx_idx;
     volatile bool _data_ready = false;
 
+    List<FlightCacheEntry> _cachedFlights;
+
 public:
-    API() : _uart(), _uart_esp(TICK_U0RXD, TICK_U0TXD, 115200) { 
+    API() : _uart(), _uart_esp(TICK_U0RXD, TICK_U0TXD, 460800) { 
         posix_io::inst.register_stdout(_uart);
 
         _rx_idx = 0;
@@ -76,6 +79,8 @@ public:
     }
 
     List<Flight> getTopFlights() {
+        _cachedFlights.clear();
+
         _data_ready = false;
         _rx_idx = 0; 
         
@@ -105,6 +110,12 @@ public:
     }
 
     SpecificFlightData getSpecificFlightData(const String &flightId){
+        for(const auto& entry : _cachedFlights){
+            if(entry.flightId == flightId){
+                return parseJsonToSpecificFlightData(entry.jsonData.c_str());
+            }
+        }
+
         _data_ready = false;
         _rx_idx = 0;
         
@@ -120,8 +131,14 @@ public:
         }
 
         if (_data_ready) {
-             _data_ready = false;
-             return parseJsonToSpecificFlightData(_raw_rx_buffer);
+            _data_ready = false;
+            
+            FlightCacheEntry entry;
+            entry.flightId = flightId;
+            entry.jsonData = String(_raw_rx_buffer);
+            _cachedFlights.add(entry);
+
+            return parseJsonToSpecificFlightData(_raw_rx_buffer);
         } 
         else if (_rx_idx > 50) {
             int endSearch = _rx_idx - 1;
@@ -131,6 +148,12 @@ public:
                     printf("Timeout Recovery: JSON Ende '}' gefunden an Pos %d. Parse Daten...\n", endSearch);
                     _raw_rx_buffer[endSearch + 1] = 0;
                     String jsonString = String(_raw_rx_buffer);
+                    
+                    FlightCacheEntry entry;
+                    entry.flightId = flightId;
+                    entry.jsonData = jsonString;
+                    _cachedFlights.add(entry);
+
                     return parseJsonToSpecificFlightData(jsonString.c_str());
                 }
                 endSearch--;
@@ -145,4 +168,4 @@ public:
 char API::_raw_rx_buffer[RX_BUF_SIZE];
 volatile int API::_rx_idx = 0;
 
-#endif // API_H
+#endif
