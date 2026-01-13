@@ -27,6 +27,7 @@ int main(){
     st7735s_drv lcd(spi, lcd_rst, lcd_dc, st7735s_drv::Crystalfontz_128x128);
 
     Drawer drawer(lcd);
+    drawer.connectWifi();
 
     uint8_t index = 1;
     
@@ -58,8 +59,9 @@ int main(){
             subPageCounter = 1;
             Flight flight = flights.get(index - 1);
             auto id = flight.flightId;
+            drawer.initSubPage(id);
             SpecificFlightData data = api.getSpecificFlightData(flight.flightId);
-            drawer.initSubPage(std::move(data));
+            drawer.addSubPageData(std::move(data));
         }
 
         if (s2.pressed() && subPageCounter != 0){

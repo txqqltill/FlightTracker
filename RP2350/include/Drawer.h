@@ -28,9 +28,11 @@ private:
     void drawSubPage5();
 public:
     Drawer(st7735s_drv& lcd);
+    void connectWifi();
     void drawTable(const List<Flight> &flightList, const uint8_t selected);
-    void initSubPage(SpecificFlightData flightData);
+    void initSubPage(const String &flightId);
     void drawSubPage(const uint8_t &pageCounter);
+    void addSubPageData(SpecificFlightData flightData);
 };
 
 #endif // DRAWER_H

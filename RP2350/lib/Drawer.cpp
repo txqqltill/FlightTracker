@@ -1,6 +1,7 @@
 #include "../include/Drawer.h"
 #include "../include/Log.h"
 #include "../include/MeasurementsConverter.h"
+#include "../../secrets/Secrets.h"
 
 #include "uGUI.h"
 #include "font_4x6.h"
@@ -245,9 +246,16 @@ void Drawer::drawSubPage(const uint8_t &pageCounter){
     }
 }
 
-void Drawer::initSubPage(SpecificFlightData flightData){
+void Drawer::addSubPageData(SpecificFlightData flightData){
     _flightData = std::move(flightData);    
     drawSubPage(1);
+}
+
+void Drawer::initSubPage(const String &flightId){
+    _lcd.clearScreen(0x0);
+    char buff[64];
+    snprintf(buff, sizeof(buff), "Feaching data for flight with ID: %s", flightId.c_str());
+    _gui.PutString(0, 0, buff);
 }
 
 void Drawer::drawSubPageTopBar(){
@@ -266,28 +274,10 @@ void Drawer::drawSubPageBottomBar(const uint8_t &pageCounter){
     _gui.DrawLine(105, 117, 105, 127, C_WHITE);
     _gui.DrawLine(0, 116, 127, 116, C_WHITE);
 }
-    // char buff[64]; 
-    // _gui.PutString(0, 0, flightData.callsign.c_str());
 
-    // snprintf(buff, sizeof(buff), "Airplane: %s", flightData.aircraftModel.code.c_str()); 
-    // _gui.PutString(0, 15, buff);
-    // auto firstTrail = flightData.trail.get(0);
-    // int32_t alt = firstTrail.alt;
-    // int32_t temp[2];
-    // footToM(alt, temp);
-    // snprintf(buff, sizeof(buff), "Height: %li ft | %ld.%02ld m", alt, temp[0], temp[1]);
-    // _gui.PutString(0, 30, buff);
-    // int32_t spd = firstTrail.spd;
-    // knotsToKmH(spd, temp);
-    // snprintf(buff, sizeof(buff), "->: %ld knt | %ld.%02ld km/h", spd, temp[0], temp[1]);
-    // _gui.PutString(0, 45, buff);
-
-
-    // auto t = flightData.trail.get(0);
-    // logNumber(t.alt);
-    // logNumber(t.spd);
-    // logInfo(flightData.aircraftModel.text.c_str());
-    // logInfo(flightData.airline.airlineName.c_str());
-    // logInfo(flightData.callsign.c_str());
-    // logNumber(flightData.times.estimatedArrival);
-    // delete buff;
+void Drawer::connectWifi(){
+    _lcd.clearScreen(0x0);
+    char buff[64];
+    sniprintf(buff, sizeof(buff), "ESP32 is connecting to the wifi '%s'", WIFI);
+    _gui.PutString(0, 0, buff);
+}
