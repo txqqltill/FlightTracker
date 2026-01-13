@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 # Set the target board
 set(YAHAL_BOARD "rp2350-launchpad")
+set(YAHAL_OPT_FLAGS -Ofast)
 
 # Locate the YAHAL library folder
 include(YAHAL_import.cmake)
@@ -18,6 +19,7 @@ add_executable(FlightTracker
 # Add YAHAL
 yahal_add_me(FlightTracker)
 yahal_add_library(FlightTracker uGUI)
+yahal_add_library(FlightTracker tinyUSB++)
 
 yahal_add_custom_targets(FlightTracker)
 yahal_add_extra_outputs(FlightTracker)

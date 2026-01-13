@@ -16,7 +16,7 @@ struct SpecificFlightData {
     AircraftModel aircraftModel;
     Airline airline;
     FlightTime times; 
-    List<FlightTrackPoint> trail;
+    FlightTrackPoint trail;
     AirportData originAirport;
     AirportData destinationAirport;
     List<FlightHistoryEntry> flightHistory;

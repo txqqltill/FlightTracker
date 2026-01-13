@@ -130,7 +130,7 @@ void Drawer::drawSubPage1(){
 
 void Drawer::drawSubPage2(){
     char buff[64];
-    auto firstTrail = _flightData.trail.get(0);
+    auto firstTrail = _flightData.trail;
     int32_t alt = firstTrail.alt;
     int32_t temp[2];
     footToM(alt, temp);
