@@ -4,14 +4,11 @@
 #include "../../extern/cJSON.h"
 #include "FlightTimeConverter.h"
 #include <ctime>
-#include <cstring> // Für strchr
+#include <cstring>
 
-// Deine Header-Strukturen
 #include "../FlightData/SpecificFlight.h"
 
 #define DEFAULTSTRING "N/A"
-
-// --- Helper Funktionen (Robust gegen null) ---
 
 String get_cjson_string(const cJSON* parent, const char* key) {
     if (parent == nullptr || cJSON_IsNull(parent)) return DEFAULTSTRING;
@@ -60,8 +57,6 @@ int64_t get_cjson_int64(const cJSON* parent, const char* key) {
 std::time_t get_cjson_time_t(const cJSON* parent, const char* key) {
     return (std::time_t)get_cjson_int64(parent, key);
 }
-
-// --- Sub-Parser ---
 
 AirportPosition parseAirportPosition(cJSON* position_json) {
     AirportPosition position;
@@ -170,17 +165,13 @@ FlightHistoryEntry parseFlightHistoryEntry(cJSON* history_json) {
     return entry;
 }
 
-// --- Haupt Parsing Funktionen ---
-
 List<Flight> parseJsonToFlightList(const char* json_string) {
-    // FIX: Suche nach dem Start des JSON-Objekts '{'
-    // Ignoriert Müll wie "220d" am Anfang
     const char* json_start = strchr(json_string, '{');
     if (json_start == nullptr) {
         return List<Flight>(); 
     }
 
-    cJSON* root = cJSON_Parse(json_start); // Parse ab der Klammer
+    cJSON* root = cJSON_Parse(json_start);
     if (root == nullptr) {
         return List<Flight>(); 
     }
@@ -217,7 +208,6 @@ List<Flight> parseJsonToFlightList(const char* json_string) {
 SpecificFlightData parseJsonToSpecificFlightData(const char* json_string) {
     SpecificFlightData flightData;
     
-    // Defaults
     flightData.callsign = DEFAULTSTRING;
     flightData.aircraftModel.code = DEFAULTSTRING;
     flightData.aircraftModel.text = DEFAULTSTRING;
@@ -231,14 +221,12 @@ SpecificFlightData parseJsonToSpecificFlightData(const char* json_string) {
     flightData.trail.hd = 0;
     flightData.trail.ts = 0;
 
-    // FIX: Suche nach dem Start des JSON-Objekts '{'
-    // Ignoriert Müll wie "220d" am Anfang
     const char* json_start = strchr(json_string, '{');
     if (json_start == nullptr) {
         return flightData;
     }
 
-    cJSON* root = cJSON_Parse(json_start); // Parse ab der Klammer
+    cJSON* root = cJSON_Parse(json_start);
     if (root == nullptr) {
         return flightData;
     }
