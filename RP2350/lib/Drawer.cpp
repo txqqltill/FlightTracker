@@ -6,6 +6,7 @@
 #include "uGUI.h"
 #include "font_4x6.h"
 #include "font_5x12.h"
+#include "font_5x8.h"
 #include "st7735s_drv.h"
 #include "yahal_String.h"
 #include <cstring> 
@@ -87,7 +88,7 @@ void Drawer::clearArea(const uint8_t x1, const uint8_t y1, const uint8_t x2, con
 }
 
 void Drawer::drawSubPage1(){
-    char buff[64];
+    char buff[128];
 
     const char* aircraft = _flightData.aircraftModel.text.c_str();
     if (strlen(aircraft) > MAXCHARSINLINE){
@@ -251,10 +252,10 @@ void Drawer::addSubPageData(SpecificFlightData flightData){
     drawSubPage(1);
 }
 
-void Drawer::initSubPage(const String &flightId){
+void Drawer::initSubPage(const String &flightId, const String &callsign){
     _lcd.clearScreen(0x0);
-    char buff[64];
-    snprintf(buff, sizeof(buff), "Feaching data for flight with ID: %s", flightId.c_str());
+    char buff[128];
+    snprintf(buff, sizeof(buff), "Feaching data for flight with \nID: '%s' and \ncallsign '%s'\n", flightId.c_str(), callsign.c_str());
     _gui.PutString(0, 0, buff);
 }
 
@@ -280,4 +281,31 @@ void Drawer::connectWifi(){
     char buff[64];
     sniprintf(buff, sizeof(buff), "ESP8266 is connecting to the wifi '%s'", WIFI);
     _gui.PutString(0, 0, buff);
+}
+
+void Drawer::programSelecter(const u_int8_t &index){
+    _lcd.clearScreen(0x0);
+    _gui.PutString(20, 0, "Flight Tracker");
+    _gui.PutString(0, 15, "Chose your Mode");
+    _gui.DrawLine(0, 30, 127, 30, C_WHITE);
+    _gui.PutString(8, 32, "Top 9 Flight");
+    _gui.PutString(8, 47, "From --> To");
+    _gui.PutString(8, 62, "Specific Flight");
+    _gui.FontSelect(&FONT_5X8);
+    _gui.PutString(0, 95, "Use Joystick to move up/down press S1 to select & S2 to go back");
+    _gui.FontSelect(&defaultFont);
+    switch (index)
+    {
+    case 1:
+        colorArea(0, 30, 5, 45);
+        break;
+    case 2: 
+        colorArea(0, 45, 5, 60);
+        break;
+    case 3: 
+        colorArea(0, 60, 5, 75);
+        break;
+    default:
+        break;
+    }
 }

@@ -52,7 +52,7 @@ public:
         task::sleep_ms(200);
         esp_reset.gpioWrite(HIGH);
         
-        printf("Warte auf ESP Boot & WiFi...\n");
+        logInfo("Warte auf ESP Boot & WiFi...");
         
         task::sleep_ms(2500); 
         
@@ -68,13 +68,15 @@ public:
 
         if (_data_ready) {
             if (strstr(_raw_rx_buffer, "READY") != nullptr) {
-                printf("ESP Verbunden und Bereit!\n");
+                logInfo("ESP Verbunden und Bereit!");
             } else {
-                printf("ESP Fehler/Unbekannt: %s\n", _raw_rx_buffer);
+                char buff[32];
+                snprintf(buff, sizeof(buff), "ESP Fehler/Unbekannt: %s\n", _raw_rx_buffer);
+                logError(buff);
             }
             _data_ready = false;
         } else {
-            printf("ESP Timeout nach Wartezeit!\n");
+            logError("ESP Timeout nach Wartezeit!\n");
         }
     }
 
@@ -96,15 +98,17 @@ public:
             _data_ready = false;
             
             if (strncmp(_raw_rx_buffer, "{\"error\"", 8) == 0) {
-                 printf("API Error: %s\n", _raw_rx_buffer);
-                 return List<Flight>();
+                char buff[32];
+                snprintf(buff, sizeof(buff), "API Error: %s\n", _raw_rx_buffer);
+                logError(buff);
+                return List<Flight>();
             }
 
             String jsonStr(_raw_rx_buffer);
             return parseJsonToFlightList(jsonStr.c_str());
         } 
         else {
-            printf("Timeout receiving LIST (Waited 15s)\n");
+            logWarning("Timeout receiving LIST (Waited 15s)\n");
             return List<Flight>();
         }
     }
@@ -145,7 +149,7 @@ public:
             while (endSearch >= 0) {
                 char c = _raw_rx_buffer[endSearch];
                 if (c == '}') {
-                    printf("Timeout Recovery: JSON Ende '}' gefunden an Pos %d. Parse Daten...\n", endSearch);
+                    logInfo("Timeout Recovery: JSON Ende '}' gefunden");
                     _raw_rx_buffer[endSearch + 1] = 0;
                     String jsonString = String(_raw_rx_buffer);
                     
@@ -160,7 +164,8 @@ public:
             }
         }
 
-        printf("Timeout & kein valides JSON gefunden. Bytes: %d\n", _rx_idx);
+        logError("Timeout & kein valides JSON gefunden. Bytes:");
+        logNumber(_rx_idx);
         return SpecificFlightData(); 
     }
 };

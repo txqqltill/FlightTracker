@@ -9,7 +9,7 @@
 #include "st7735s_drv.h"
 #include "yahal_String.h"
 
-#define MAXSUBPAGE 5
+#define MAXSUBPAGE 4
 
 class Drawer {
 private:
@@ -30,9 +30,13 @@ public:
     Drawer(st7735s_drv& lcd);
     void connectWifi();
     void drawTable(const List<Flight> &flightList, const uint8_t selected);
-    void initSubPage(const String &flightId);
+    void initSubPage(const String &flightId, const String &callsign);
     void drawSubPage(const uint8_t &pageCounter);
     void addSubPageData(SpecificFlightData flightData);
+
+
+    void programSelecter(const u_int8_t &index);
+
 };
 
 #endif // DRAWER_H

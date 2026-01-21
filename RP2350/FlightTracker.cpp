@@ -5,6 +5,7 @@
 #include "include/Button.h"
 #include "include/API.h"
 #include "include/Timer.h"
+#include "include/SubmenuManager.h"
 
 #include "spi_rp2350.h"
 #include "boostxl_eduMKII.h"
@@ -39,13 +40,16 @@ int main(){
 
     bool inSubMenu = false;
     uint8_t subPageCounter = 0;
-    API api;
-    List<Flight> flights = api.getTopFlights();
+    drawer.programSelecter(index);
+    // API api;
+    // List<Flight> flights = api.getTopFlights();
 
-    Timer apiTimer(flights);
-    apiTimer.start();
+    // Timer apiTimer(flights);
+    // apiTimer.start();
 
-    drawer.drawTable(flights, index);
+
+    SubmenuManager subManger(MAIN);
+    SubMenu lastSubMenu = subManger.getCurrentMenu();
 
     while (1) {
         bool right = joy.MovedRight();
@@ -54,59 +58,101 @@ int main(){
         bool up = joy.MovedUp();
         bool draw_needed = false;
 
-        if (s1.pressed() && subPageCounter == 0){
-            inSubMenu = true;
-            subPageCounter = 1;
-            Flight flight = flights.get(index - 1);
-            auto id = flight.flightId;
-            drawer.initSubPage(id);
-            SpecificFlightData data = api.getSpecificFlightData(flight.flightId);
-            drawer.addSubPageData(std::move(data));
+        if (s1.pressed()){
+            subManger.S1Pressed(index);
+            logNumber(subManger.getCurrentMenu());
         }
 
-        if (s2.pressed() && subPageCounter != 0){
-            inSubMenu = false;
+        if (s2.pressed()){
+            subManger.S2Pressed();
+            logNumber(subManger.getCurrentMenu());
+        }
+
+        SubMenu currendSubMenu = subManger.getCurrentMenu();
+        if (currendSubMenu != lastSubMenu) {
             draw_needed = true;
-            subPageCounter = 0;
         }
-
-        if (s3.pressed()){
-            apiTimer.reset();
-            flights = api.getTopFlights();
-        }
-
-        if (down && inSubMenu == false) {
-            if (index < DISPLAY_LIMIT) {
-                index++;
-                draw_needed = true;
+        switch (currendSubMenu)
+        {
+        case MAIN:
+            if (draw_needed){
+                drawer.programSelecter(index);
             }
-        }
 
-        if (right && subPageCounter >= 1){
-            subPageCounter++;
-            if (subPageCounter > MAXSUBPAGE) 
-                subPageCounter = MAXSUBPAGE;
+            if (down && index < 3){
+                ++index;
+                drawer.programSelecter(index);
+            }
 
-            drawer.drawSubPage(subPageCounter);
-        }
-
-        if (left && subPageCounter >= 1){
-            subPageCounter--;
-            if (subPageCounter <= 0)
-                subPageCounter = 1;
-            
-            drawer.drawSubPage(subPageCounter);
-        }
+            if (up && index > 1){
+                --index;
+                drawer.programSelecter(index);
+            }
+            break;
         
-        if (up && inSubMenu == false) {
-            if (index > 1) {
-                index--;
-                draw_needed = true;
+        case TOP9:
+            if (draw_needed){
+                // drawer.drawTable(flights, index);
             }
-        }
-
-        if (draw_needed) {
-            drawer.drawTable(flights, index);
+            
+        default:
+            break;
         }
     }
 }
+
+
+// if (s1.pressed() && subPageCounter == 0){
+//             inSubMenu = true;
+//             subPageCounter = 1;
+//             // Flight flight = flights.get(index - 1);
+//             // auto id = flight.flightId;
+//             // drawer.initSubPage(flight.flightId, flight.callsign);
+//             // SpecificFlightData data = api.getSpecificFlightData(flight.flightId);
+//             // drawer.addSubPageData(std::move(data));
+//         }
+
+//         if (s2.pressed() && subPageCounter != 0){
+//             inSubMenu = false;
+//             draw_needed = true;
+//             subPageCounter = 0;
+//         }
+
+//         if (s3.pressed()){
+//             // apiTimer.reset();
+//             // flights = api.getTopFlights();
+//         }
+
+//         if (down && inSubMenu == false) {
+//             if (index < DISPLAY_LIMIT) {
+//                 index++;
+//                 draw_needed = true;
+//             }
+//         }
+
+//         if (right && subPageCounter >= 1){
+//             subPageCounter++;
+//             if (subPageCounter > MAXSUBPAGE) 
+//                 subPageCounter = MAXSUBPAGE;
+
+//             drawer.drawSubPage(subPageCounter);
+//         }
+
+//         if (left && subPageCounter >= 1){
+//             subPageCounter--;
+//             if (subPageCounter <= 0)
+//                 subPageCounter = 1;
+            
+//             drawer.drawSubPage(subPageCounter);
+//         }
+        
+//         if (up && inSubMenu == false) {
+//             if (index > 1) {
+//                 index--;
+//                 draw_needed = true;
+//             }
+//         }
+
+//         if (draw_needed) {
+//             // drawer.drawTable(flights, index);
+//         }
