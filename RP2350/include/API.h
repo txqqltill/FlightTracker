@@ -80,10 +80,6 @@ public:
         }
     }
 
-    List<Flight>getFlightsRoute(const String &from, const String &to){
-        
-    }
-
     List<Flight> getTopFlights() {
         _cachedFlights.clear();
 
@@ -113,6 +109,41 @@ public:
         } 
         else {
             logWarning("Timeout receiving LIST (Waited 15s)\n");
+            return List<Flight>();
+        }
+    }
+
+    List<Flight> getFlightsRoute(const String &from, const String &to) {
+        _cachedFlights.clear(); 
+
+        _data_ready = false;
+        _rx_idx = 0; 
+        
+        String cmd = "ROUTE:" + from + ":" + to + "\n";
+        _uart_esp.puts(cmd.c_str());
+
+        int timeout = 0;
+        while (_data_ready == false && timeout < 1500) { 
+            task::sleep_ms(10);
+            timeout++;
+        }
+
+        if (_data_ready) {
+            _data_ready = false;
+            
+            if (strncmp(_raw_rx_buffer, "{\"error\"", 8) == 0) {
+                char buff[64];
+                snprintf(buff, sizeof(buff), "API Error (Route): %s\n", _raw_rx_buffer);
+                logError(buff);
+                return List<Flight>();
+            }
+
+            String jsonStr(_raw_rx_buffer);
+            logInfo(jsonStr.c_str());
+            return parseJsonToFlightList(jsonStr.c_str());
+        } 
+        else {
+            logWarning("Timeout receiving ROUTE (Waited 15s)\n");
             return List<Flight>();
         }
     }

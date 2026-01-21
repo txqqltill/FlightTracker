@@ -177,6 +177,43 @@ List<Flight> parseJsonToFlightList(const char* json_string) {
     }
 
     List<Flight> flight_list;
+
+    cJSON* results_array = cJSON_GetObjectItemCaseSensitive(root, "results");
+    if (results_array != nullptr && cJSON_IsArray(results_array)) {
+        cJSON* item = nullptr;
+        cJSON_ArrayForEach(item, results_array) {
+            if (cJSON_IsObject(item)) {
+                String typeStr = get_cjson_string(item, "type");
+                
+                if (typeStr == "live" || typeStr == "schedule") {
+                    Flight flight;
+                    
+                    flight.flightId = get_cjson_string(item, "id");
+                    
+                    cJSON* detail = cJSON_GetObjectItemCaseSensitive(item, "detail");
+                    if (detail) {
+                        flight.callsign = get_cjson_string(detail, "callsign");
+                        flight.flightNumber = get_cjson_string(detail, "flight");
+                        flight.fromIata = get_cjson_string(detail, "schd_from");
+                        flight.toIata = get_cjson_string(detail, "schd_to");
+                        flight.model = get_cjson_string(detail, "ac_type");
+                        flight.type = get_cjson_string(detail, "ac_type");
+                        
+                        flight.fromCity = DEFAULTSTRING; 
+                        flight.toCity = DEFAULTSTRING;
+                    }
+                    
+                    flight.clicks = 0; 
+                    flight.squawk = DEFAULTSTRING;
+                    
+                    flight_list.add(flight);
+                }
+            }
+        }
+        cJSON_Delete(root);
+        return flight_list;
+    }
+
     cJSON* data_array = cJSON_GetObjectItemCaseSensitive(root, "data");
 
     if (data_array != nullptr && cJSON_IsArray(data_array)) {
@@ -184,17 +221,68 @@ List<Flight> parseJsonToFlightList(const char* json_string) {
         cJSON_ArrayForEach(flight_json, data_array) {
             if (cJSON_IsObject(flight_json)) {
                 Flight flight;
-                flight.callsign = get_cjson_string(flight_json, "callsign");
-                flight.clicks = get_cjson_int(flight_json, "clicks");
-                flight.flightNumber = get_cjson_string(flight_json, "flight"); 
-                flight.flightId = get_cjson_string(flight_json, "flight_id");
-                flight.fromCity = get_cjson_string(flight_json, "from_city");
-                flight.fromIata = get_cjson_string(flight_json, "from_iata");
-                flight.model = get_cjson_string(flight_json, "model");
-                flight.squawk = get_cjson_string(flight_json, "squawk");
-                flight.toCity = get_cjson_string(flight_json, "to_city");
-                flight.toIata = get_cjson_string(flight_json, "to_iata");
-                flight.type = get_cjson_string(flight_json, "type");
+
+                if (cJSON_HasObjectItem(flight_json, "flight_id")) {
+                    flight.callsign = get_cjson_string(flight_json, "callsign");
+                    flight.clicks = get_cjson_int(flight_json, "clicks");
+                    flight.flightNumber = get_cjson_string(flight_json, "flight"); 
+                    flight.flightId = get_cjson_string(flight_json, "flight_id");
+                    flight.fromCity = get_cjson_string(flight_json, "from_city");
+                    flight.fromIata = get_cjson_string(flight_json, "from_iata");
+                    flight.model = get_cjson_string(flight_json, "model");
+                    flight.squawk = get_cjson_string(flight_json, "squawk");
+                    flight.toCity = get_cjson_string(flight_json, "to_city");
+                    flight.toIata = get_cjson_string(flight_json, "to_iata");
+                    flight.type = get_cjson_string(flight_json, "type");
+                } else if (cJSON_HasObjectItem(flight_json, "identification")) {
+                    cJSON* ident = cJSON_GetObjectItemCaseSensitive(flight_json, "identification");
+                    flight.flightId = get_cjson_string(ident, "id");
+                    flight.callsign = get_cjson_string(ident, "callsign");
+                    
+                    cJSON* number = cJSON_GetObjectItemCaseSensitive(ident, "number");
+                    if (number) {
+                         flight.flightNumber = get_cjson_string(number, "default");
+                    }
+
+                    cJSON* airport = cJSON_GetObjectItemCaseSensitive(flight_json, "airport");
+                    if (airport) {
+                        cJSON* origin = cJSON_GetObjectItemCaseSensitive(airport, "origin");
+                        if (origin) {
+                             cJSON* code = cJSON_GetObjectItemCaseSensitive(origin, "code");
+                             if (code) flight.fromIata = get_cjson_string(code, "iata");
+                             cJSON* pos = cJSON_GetObjectItemCaseSensitive(origin, "position");
+                             if (pos) {
+                                 cJSON* reg = cJSON_GetObjectItemCaseSensitive(pos, "region");
+                                 if (reg) flight.fromCity = get_cjson_string(reg, "city");
+                             }
+                        }
+
+                        cJSON* destination = cJSON_GetObjectItemCaseSensitive(airport, "destination");
+                        if (destination && !cJSON_IsNull(destination)) {
+                             cJSON* code = cJSON_GetObjectItemCaseSensitive(destination, "code");
+                             if (code) flight.toIata = get_cjson_string(code, "iata");
+                             cJSON* pos = cJSON_GetObjectItemCaseSensitive(destination, "position");
+                             if (pos) {
+                                 cJSON* reg = cJSON_GetObjectItemCaseSensitive(pos, "region");
+                                 if (reg) flight.toCity = get_cjson_string(reg, "city");
+                             }
+                        } else {
+                            flight.toIata = DEFAULTSTRING;
+                            flight.toCity = DEFAULTSTRING;
+                        }
+                    }
+
+                    cJSON* aircraft = cJSON_GetObjectItemCaseSensitive(flight_json, "aircraft");
+                    if (aircraft) {
+                        cJSON* model = cJSON_GetObjectItemCaseSensitive(aircraft, "model");
+                        if (model) {
+                            flight.model = get_cjson_string(model, "text");
+                            flight.type = get_cjson_string(model, "code");
+                        }
+                    }
+                    
+                    flight.clicks = 0;
+                }
                 
                 flight_list.add(flight); 
             }
@@ -236,7 +324,9 @@ SpecificFlightData parseJsonToSpecificFlightData(const char* json_string) {
         flightData.callsign = get_cjson_string(identification, "callsign");
         if (flightData.callsign == DEFAULTSTRING) {
             cJSON* number = cJSON_GetObjectItemCaseSensitive(identification, "number");
-            if (number) flightData.callsign = get_cjson_string(number, "default");
+            if (number) {
+                flightData.callsign = get_cjson_string(number, "default");
+            }
         }
     }
 
@@ -253,6 +343,12 @@ SpecificFlightData parseJsonToSpecificFlightData(const char* json_string) {
     if (airline && !cJSON_IsNull(airline)) {
         flightData.airline.airlineName = get_cjson_string(airline, "name");
         flightData.airline.airlineShort = get_cjson_string(airline, "short");
+        if (flightData.airline.airlineShort == DEFAULTSTRING) {
+             cJSON* code = cJSON_GetObjectItemCaseSensitive(airline, "code");
+             if (code && cJSON_IsString(code)) {
+                 flightData.airline.airlineShort = get_cjson_string(airline, "code");
+             }
+        }
     }
 
     cJSON* time = cJSON_GetObjectItemCaseSensitive(root, "time");

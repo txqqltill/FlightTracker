@@ -71,8 +71,10 @@ int main(){
             subManager.handleSelect();
             if (subManager.getCurrentMenu() == FROM_TO_SPECIFIC) {
                // Hier würde man die Suche starten:
-               flights = api.getFlightsRoute(fromToManager.getFrom(), fromToManager.getTo());
-               drawer.drawTable(flights, 1);
+
+                List<Flight> flight = api.getFlightsRoute(fromToManager.getFrom(), fromToManager.getTo());
+                logNumber(flight.size());
+                drawer.drawTable(flight, 0, false);
             }
         }
 
@@ -109,7 +111,7 @@ int main(){
                 break;
             
             case TOP9:
-                drawer.drawTable(flights, currentIndex);
+                drawer.drawTable(flights, currentIndex, true);
                 break;
 
             case TOP9_SPECIFIC:

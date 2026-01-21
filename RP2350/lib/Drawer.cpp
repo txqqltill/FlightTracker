@@ -27,14 +27,21 @@ void Drawer::colorArea(const uint8_t x1, const uint8_t y1, const uint8_t x2, con
     _gui.FillFrame(x1, y1, x2, y2, C_CYAN);
 }
 
-void Drawer::drawTable(const List<Flight> &flightList, const uint8_t selected){
+void Drawer::drawTable(const List<Flight> &flightList, const uint8_t selected, const bool top9){
     _lcd.clearScreen(0x0);
     uint8_t x = 5;
     uint8_t y = 0;
-    char buff[4]; 
+    char buff[32]; 
     uint8_t counter = 1; 
 
-    _gui.PutString(x, y, "TOP 9 Flights");
+    if (top9){
+        _gui.PutString(x, y, "TOP 9 Flights");
+    }
+    else{
+        auto first = flightList.get(1);
+        snprintf(buff, sizeof(buff), "Flights: %s --> %s", first.fromIata.c_str(), first.toIata.c_str()); 
+        _gui.PutString(x, y, buff);
+    }
     y += 12;
     for (const auto& flight : flightList){
         _gui.DrawLine(0, y, 127, y, C_WHITE);

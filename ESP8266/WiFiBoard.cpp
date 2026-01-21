@@ -128,7 +128,7 @@ void streamFilteredJSON(WiFiClient* source, Stream* dest) {
     }
 }
 
-void performRequest(String url, bool useFilter) {
+void performRequest(String url, String host, bool useFilter) {
     if (WiFi.status() != WL_CONNECTED) {
         Serial.print("{\"error\": \"No WiFi\"}\x04"); 
         return;
@@ -144,7 +144,7 @@ void performRequest(String url, bool useFilter) {
 
     if (http.begin(client, url)) {
         http.addHeader("x-rapidapi-key", APIKEY);
-        http.addHeader("x-rapidapi-host", APIHOST);
+        http.addHeader("x-rapidapi-host", host);
         http.addHeader("Connection", "close");
         
         int httpCode = http.GET();
@@ -175,15 +175,32 @@ void loop() {
     if (stringComplete) {
         inputString.trim();
         if (inputString == "LIST") {
-            performRequest("https://flight-radar1.p.rapidapi.com/flights/list-most-tracked", false);
+            performRequest("https://flight-radar1.p.rapidapi.com/flights/list-most-tracked", APIHOST, false);
         } 
         else if (inputString.startsWith("DETAIL:")) {
             String flightId = inputString.substring(7);
             flightId.trim();
             if (flightId.length() > 0) {
-                performRequest("https://flight-radar1.p.rapidapi.com/flights/detail?flight=" + flightId, true);
+                performRequest("https://flight-radar1.p.rapidapi.com/flights/detail?flight=" + flightId, APIHOST, true);
             }
         }
+        else if (inputString.startsWith("ROUTE:")) {
+            int firstColon = 5; 
+            int secondColon = inputString.indexOf(':', firstColon + 1);
+            
+            if (secondColon > 0) {
+                String from = inputString.substring(firstColon + 1, secondColon);
+                String to = inputString.substring(secondColon + 1);
+                from.trim();
+                to.trim();
+                
+                if (from.length() > 0 && to.length() > 0) {
+                    String url = "https://flight-radar8.p.rapidapi.com/flights/flight-by-route?airportFrom=" + from + "&airportTo=" + to + "&limit=9";
+                    performRequest(url, "flight-radar8.p.rapidapi.com", false);
+                }
+            }
+        }
+        
         inputString = "";
         stringComplete = false;
     }
