@@ -6,12 +6,11 @@
 #include "include/API.h"
 #include "include/Timer.h"
 #include "include/SubmenuManager.h"
+#include "include/SpecificFlightManager.h"
 
 #include "spi_rp2350.h"
 #include "boostxl_eduMKII.h"
 #include "board.h"
-
-#define DISPLAY_LIMIT 9
 
 int main(){
     initLogger();
@@ -30,129 +29,73 @@ int main(){
     Drawer drawer(lcd);
     drawer.connectWifi();
 
-    uint8_t index = 1;
-    
     Joystick joy;
-
     Button s1(EDU_BUTTON1);
     Button s2(EDU_BUTTON2);
-    Button s3(S2_GPIO);
 
-    bool inSubMenu = false;
-    uint8_t subPageCounter = 0;
-    drawer.programSelecter(index);
-    // API api;
-    // List<Flight> flights = api.getTopFlights();
+    API api;
+    List<Flight> flights = api.getTopFlights();
 
-    // Timer apiTimer(flights);
-    // apiTimer.start();
+    SubmenuManager subManager(MAIN);
+    SpecificFlightManager flightManager(api, drawer);
+    
+    SubMenu lastSubMenu = subManager.getCurrentMenu();
+    uint8_t lastIndex = subManager.getCurrentIndex();
 
-
-    SubmenuManager subManger(MAIN);
-    SubMenu lastSubMenu = subManger.getCurrentMenu();
+    drawer.programSelecter(lastIndex);
 
     while (1) {
         bool right = joy.MovedRight();
         bool left = joy.MovedLeft();
         bool down = joy.MovedDown();
         bool up = joy.MovedUp();
-        bool draw_needed = false;
-
-        if (s1.pressed()){
-            subManger.S1Pressed(index);
-            logNumber(subManger.getCurrentMenu());
-        }
-
-        if (s2.pressed()){
-            subManger.S2Pressed();
-            logNumber(subManger.getCurrentMenu());
-        }
-
-        SubMenu currendSubMenu = subManger.getCurrentMenu();
-        if (currendSubMenu != lastSubMenu) {
-            draw_needed = true;
-        }
-        switch (currendSubMenu)
-        {
-        case MAIN:
-            if (draw_needed){
-                drawer.programSelecter(index);
-            }
-
-            if (down && index < 3){
-                ++index;
-                drawer.programSelecter(index);
-            }
-
-            if (up && index > 1){
-                --index;
-                drawer.programSelecter(index);
-            }
-            break;
+        bool select = s1.pressed();
+        bool back = s2.pressed();
         
-        case TOP9:
-            if (draw_needed){
-                // drawer.drawTable(flights, index);
-            }
+        if (up || down) {
+            subManager.handleNavigation(up, down);
+        }
+        
+        if (left || right) {
+            subManager.handleHorizontal(left, right);
+        }
+
+        if (select) {
+            subManager.handleSelect();
+            logNumber(subManager.getCurrentMenu());
+        }
+
+        if (back) {
+            subManager.handleBack();
+            logNumber(subManager.getCurrentMenu());
+        }
+
+        SubMenu currentSubMenu = subManager.getCurrentMenu();
+        uint8_t currentIndex = subManager.getCurrentIndex();
+        
+        bool stateChanged = (currentSubMenu != lastSubMenu) || (currentIndex != lastIndex);
+
+        if (stateChanged) {
+            lastSubMenu = currentSubMenu;
+            lastIndex = currentIndex;
+
+            switch (currentSubMenu)
+            {
+            case MAIN:
+                drawer.programSelecter(currentIndex);
+                break;
             
-        default:
-            break;
+            case TOP9:
+                drawer.drawTable(flights, currentIndex);
+                break;
+
+            case TOP9_SPECIFIC:
+                flightManager.handleDisplay(subManager, flights);
+                break;
+                
+            default:
+                break;
+            }
         }
     }
 }
-
-
-// if (s1.pressed() && subPageCounter == 0){
-//             inSubMenu = true;
-//             subPageCounter = 1;
-//             // Flight flight = flights.get(index - 1);
-//             // auto id = flight.flightId;
-//             // drawer.initSubPage(flight.flightId, flight.callsign);
-//             // SpecificFlightData data = api.getSpecificFlightData(flight.flightId);
-//             // drawer.addSubPageData(std::move(data));
-//         }
-
-//         if (s2.pressed() && subPageCounter != 0){
-//             inSubMenu = false;
-//             draw_needed = true;
-//             subPageCounter = 0;
-//         }
-
-//         if (s3.pressed()){
-//             // apiTimer.reset();
-//             // flights = api.getTopFlights();
-//         }
-
-//         if (down && inSubMenu == false) {
-//             if (index < DISPLAY_LIMIT) {
-//                 index++;
-//                 draw_needed = true;
-//             }
-//         }
-
-//         if (right && subPageCounter >= 1){
-//             subPageCounter++;
-//             if (subPageCounter > MAXSUBPAGE) 
-//                 subPageCounter = MAXSUBPAGE;
-
-//             drawer.drawSubPage(subPageCounter);
-//         }
-
-//         if (left && subPageCounter >= 1){
-//             subPageCounter--;
-//             if (subPageCounter <= 0)
-//                 subPageCounter = 1;
-            
-//             drawer.drawSubPage(subPageCounter);
-//         }
-        
-//         if (up && inSubMenu == false) {
-//             if (index > 1) {
-//                 index--;
-//                 draw_needed = true;
-//             }
-//         }
-
-//         if (draw_needed) {
-//             // drawer.drawTable(flights, index);
-//         }

@@ -32,7 +32,7 @@ public:
     void drawTable(const List<Flight> &flightList, const uint8_t selected);
     void initSubPage(const String &flightId, const String &callsign);
     void drawSubPage(const uint8_t &pageCounter);
-    void addSubPageData(SpecificFlightData flightData);
+    void addSubPageData(const SpecificFlightData &flightData);
 
 
     void programSelecter(const u_int8_t &index);

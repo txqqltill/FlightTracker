@@ -247,7 +247,7 @@ void Drawer::drawSubPage(const uint8_t &pageCounter){
     }
 }
 
-void Drawer::addSubPageData(SpecificFlightData flightData){
+void Drawer::addSubPageData(const SpecificFlightData &flightData){
     _flightData = std::move(flightData);    
     drawSubPage(1);
 }
