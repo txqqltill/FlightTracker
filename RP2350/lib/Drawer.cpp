@@ -309,3 +309,30 @@ void Drawer::programSelecter(const u_int8_t &index){
         break;
     }
 }
+
+void Drawer::drawFromToMenu(const String& from, const String& to, uint8_t cursor) {
+    _lcd.clearScreen(0x0);
+    
+    _gui.PutString(10, 10, "FROM -> TO");
+    
+    int yPos = 50;
+    int xStart = 10;
+    int spacing = 10;
+
+    for(int i=0; i<3; i++) {
+        UG_COLOR currentBg = (cursor == i) ? C_BLUE : C_BLACK;
+        
+        _gui.PutChar(from[i], xStart + (i * spacing), yPos, C_WHITE, currentBg, true); 
+    }
+
+    _gui.SetForecolor(C_WHITE);
+    _gui.SetBackcolor(C_BLACK);
+    _gui.PutString(xStart + (3 * spacing) + 5, yPos, "->");
+
+    int xStartTo = xStart + (3 * spacing) + 35;
+    for(int i=0; i<3; i++) {
+        UG_COLOR currentBg = (cursor == (i+3)) ? C_BLUE : C_BLACK;
+        
+        _gui.PutChar(to[i], xStartTo + (i * spacing), yPos, C_WHITE, currentBg, true);
+    }
+}

@@ -80,6 +80,10 @@ public:
         }
     }
 
+    List<Flight>getFlightsRoute(const String &from, const String &to){
+        
+    }
+
     List<Flight> getTopFlights() {
         _cachedFlights.clear();
 

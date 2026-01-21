@@ -7,6 +7,7 @@
 #include "include/Timer.h"
 #include "include/SubmenuManager.h"
 #include "include/SpecificFlightManager.h"
+#include "include/FromToManager.h"
 
 #include "spi_rp2350.h"
 #include "boostxl_eduMKII.h"
@@ -38,9 +39,14 @@ int main(){
 
     SubmenuManager subManager(MAIN);
     SpecificFlightManager flightManager(api, drawer);
+    FromToManager fromToManager; 
     
     SubMenu lastSubMenu = subManager.getCurrentMenu();
     uint8_t lastIndex = subManager.getCurrentIndex();
+    
+    uint8_t lastCursor = 99; 
+    String lastFrom = "";
+    String lastTo = "";
 
     drawer.programSelecter(lastIndex);
 
@@ -52,30 +58,47 @@ int main(){
         bool select = s1.pressed();
         bool back = s2.pressed();
         
-        if (up || down) {
-            subManager.handleNavigation(up, down);
-        }
-        
-        if (left || right) {
-            subManager.handleHorizontal(left, right);
+        SubMenu currentMenu = subManager.getCurrentMenu();
+
+        if (currentMenu == FROM_TO) {
+            fromToManager.handleInput(up, down, left, right);
+        } else {
+            if (up || down) subManager.handleNavigation(up, down);
+            if (left || right) subManager.handleHorizontal(left, right);
         }
 
         if (select) {
             subManager.handleSelect();
-            logNumber(subManager.getCurrentMenu());
+            if (subManager.getCurrentMenu() == FROM_TO_SPECIFIC) {
+               // Hier würde man die Suche starten:
+               flights = api.getFlightsRoute(fromToManager.getFrom(), fromToManager.getTo());
+               drawer.drawTable(flights, 1);
+            }
         }
 
         if (back) {
             subManager.handleBack();
-            logNumber(subManager.getCurrentMenu());
         }
 
         SubMenu currentSubMenu = subManager.getCurrentMenu();
         uint8_t currentIndex = subManager.getCurrentIndex();
         
-        bool stateChanged = (currentSubMenu != lastSubMenu) || (currentIndex != lastIndex);
+        bool menuChanged = (currentSubMenu != lastSubMenu);
+        bool indexChanged = (currentIndex != lastIndex);
+        
+        bool inputChanged = false;
+        if (currentSubMenu == FROM_TO) {
+            if (fromToManager.getCursor() != lastCursor || 
+                fromToManager.getFrom() != lastFrom || 
+                fromToManager.getTo() != lastTo) {
+                inputChanged = true;
+                lastCursor = fromToManager.getCursor();
+                lastFrom = fromToManager.getFrom();
+                lastTo = fromToManager.getTo();
+            }
+        }
 
-        if (stateChanged) {
+        if (menuChanged || indexChanged || inputChanged) {
             lastSubMenu = currentSubMenu;
             lastIndex = currentIndex;
 
@@ -92,7 +115,14 @@ int main(){
             case TOP9_SPECIFIC:
                 flightManager.handleDisplay(subManager, flights);
                 break;
-                
+
+            case FROM_TO:
+                drawer.drawFromToMenu(fromToManager.getFrom(), fromToManager.getTo(), fromToManager.getCursor());
+                break;
+            
+            case FROM_TO_SPECIFIC:
+                break;
+
             default:
                 break;
             }

@@ -33,8 +33,7 @@ public:
     void initSubPage(const String &flightId, const String &callsign);
     void drawSubPage(const uint8_t &pageCounter);
     void addSubPageData(const SpecificFlightData &flightData);
-
-
+    void drawFromToMenu(const String& from, const String& to, uint8_t cursor);
     void programSelecter(const u_int8_t &index);
 
 };
