@@ -10,7 +10,8 @@ enum SubMenu {
     FROM_TO,
     FROM_TO_SPECIFIC,
     SPECIFIC_INPUT,
-    SPECIFIC_INFO
+    SPECIFIC_RESULT,
+    SPECIFIC_SHOW
 };
 
 class SubmenuManager
@@ -26,6 +27,7 @@ private:
         switch (menu) {
             case MAIN: return 3;
             case TOP9: return 9; 
+            case SPECIFIC_RESULT: return 9;
             default: return 1;
         }
     }
@@ -34,8 +36,7 @@ public:
     SubmenuManager(SubMenu startMenu) : _subMenu(startMenu), _currentIndex(1), _selectedListIndex(0) {}
 
     void handleNavigation(bool up, bool down) {
-        // In diesen Menüs übernimmt ein anderer Manager die Navigation (z.B. FromToManager)
-        if (_subMenu == TOP9_SPECIFIC || _subMenu == FROM_TO) return; 
+        if (_subMenu == TOP9_SPECIFIC || _subMenu == FROM_TO || _subMenu == SPECIFIC_INPUT || _subMenu == SPECIFIC_SHOW) return; 
 
         uint8_t maxItems = getMaxItemsForMenu(_subMenu);
         
@@ -48,7 +49,7 @@ public:
     }
 
     void handleHorizontal(bool left, bool right) {
-        if (_subMenu == TOP9_SPECIFIC) {
+        if (_subMenu == TOP9_SPECIFIC || _subMenu == SPECIFIC_SHOW) {
             if (right && _currentIndex < MAX_SUBPAGES) _currentIndex++;
             if (left && _currentIndex > 1) _currentIndex--;
         }
@@ -74,11 +75,22 @@ public:
             
             case FROM_TO:
                 _subMenu = FROM_TO_SPECIFIC;
-                // Hier könnte man den API Call triggern (extern)
+                break;
+            
+            case SPECIFIC_INPUT:
+                _subMenu = SPECIFIC_RESULT;
+                _currentIndex = 1;
+                break;
+
+            case SPECIFIC_RESULT:
+                _selectedListIndex = _currentIndex;
+                _subMenu = SPECIFIC_SHOW;
+                _currentIndex = 1;
                 break;
 
             case TOP9_SPECIFIC:
             case FROM_TO_SPECIFIC:
+            case SPECIFIC_SHOW:
                 break; 
 
             default:
@@ -110,8 +122,13 @@ public:
                 _subMenu = MAIN;
                 _currentIndex = 1;
                 break;
-            case SPECIFIC_INFO:
+            case SPECIFIC_RESULT:
                 _subMenu = SPECIFIC_INPUT;
+                _currentIndex = 1;
+                break;
+            case SPECIFIC_SHOW:
+                _subMenu = SPECIFIC_RESULT;
+                _currentIndex = _selectedListIndex;
                 break;
             default:
                 _subMenu = MAIN;

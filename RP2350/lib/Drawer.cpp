@@ -1,6 +1,7 @@
 #include "../include/Drawer.h"
 #include "../include/Log.h"
 #include "../include/MeasurementsConverter.h"
+#include "../include/JSONConverter.h"
 #include "../../secrets/Secrets.h"
 
 #include "uGUI.h"
@@ -39,7 +40,11 @@ void Drawer::drawTable(const List<Flight> &flightList, const uint8_t selected, c
     }
     else{
         auto first = flightList.get(1);
-        snprintf(buff, sizeof(buff), "Flights: %s --> %s", first.fromIata.c_str(), first.toIata.c_str()); 
+        if (first.fromIata != DEFAULTSTRING) {
+            snprintf(buff, sizeof(buff), "Flights: %s --> %s", first.fromIata.c_str(), first.toIata.c_str()); 
+        } else {
+            snprintf(buff, sizeof(buff), "Search Results");
+        }
         _gui.PutString(x, y, buff);
     }
     y += 12;
@@ -52,10 +57,16 @@ void Drawer::drawTable(const List<Flight> &flightList, const uint8_t selected, c
         snprintf(buff, sizeof(buff), "%u", counter); 
         _gui.PutString(x, y, buff);
         x += 12;
-        _gui.PutString(x, y, flight.fromIata.c_str());
-        x += 30;
-        _gui.PutString(x, y, flight.toIata.c_str());
-        x += 30;
+        if (flight.fromIata != DEFAULTSTRING) {
+             _gui.PutString(x, y, flight.fromIata.c_str());
+             x += 30;
+             _gui.PutString(x, y, flight.toIata.c_str());
+             x += 30;
+        } else {
+             x += 5;
+             _gui.PutString(x, y, flight.flightNumber.c_str());
+             x += 55;
+        }
         _gui.PutString(x, y, flight.callsign.c_str());
         
         x = 5;
@@ -341,5 +352,20 @@ void Drawer::drawFromToMenu(const String& from, const String& to, uint8_t cursor
         UG_COLOR currentBg = (cursor == (i+3)) ? C_BLUE : C_BLACK;
         
         _gui.PutChar(to[i], xStartTo + (i * spacing), yPos, C_WHITE, currentBg, true);
+    }
+}
+
+void Drawer::drawSearchMenu(const String& query, uint8_t cursor) {
+    _lcd.clearScreen(0x0);
+    _gui.PutString(10, 10, "Specific Flight");
+    
+    int yPos = 50;
+    int xStart = 10;
+    int spacing = 10;
+
+    for(int i=0; i<7; i++) {
+        UG_COLOR currentBg = (cursor == i) ? C_BLUE : C_BLACK;
+        char c = (i < query.size()) ? query[i] : ' ';
+        _gui.PutChar(c, xStart + (i * spacing), yPos, C_WHITE, currentBg, true); 
     }
 }

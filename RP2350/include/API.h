@@ -147,6 +147,34 @@ public:
             return List<Flight>();
         }
     }
+    
+    List<Flight> searchFlights(const String &query) {
+        _cachedFlights.clear();
+        _data_ready = false;
+        _rx_idx = 0;
+
+        String cmd = "SEARCH:" + query + "\n";
+        _uart_esp.puts(cmd.c_str());
+
+        int timeout = 0;
+        while (_data_ready == false && timeout < 1500) { 
+            task::sleep_ms(10);
+            timeout++;
+        }
+
+        if (_data_ready) {
+            _data_ready = false;
+            if (strncmp(_raw_rx_buffer, "{\"error\"", 8) == 0) {
+                logError(_raw_rx_buffer);
+                return List<Flight>();
+            }
+            String jsonStr(_raw_rx_buffer);
+            return parseSearchJsonToFlightList(jsonStr.c_str());
+        } else {
+            logWarning("Timeout receiving SEARCH");
+            return List<Flight>();
+        }
+    }
 
     SpecificFlightData getSpecificFlightData(const String &flightId){
         for(const auto& entry : _cachedFlights){

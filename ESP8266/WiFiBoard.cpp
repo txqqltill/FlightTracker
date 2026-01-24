@@ -200,6 +200,14 @@ void loop() {
                 }
             }
         }
+        else if (inputString.startsWith("SEARCH:")) {
+            String query = inputString.substring(7);
+            query.trim();
+            if (query.length() > 0) {
+                 String url = "https://flight-radar8.p.rapidapi.com/flights/search?query=" + query;
+                 performRequest(url, "flight-radar8.p.rapidapi.com", false);
+            }
+        }
         
         inputString = "";
         stringComplete = false;

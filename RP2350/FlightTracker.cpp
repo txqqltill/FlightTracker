@@ -8,6 +8,7 @@
 #include "include/SubmenuManager.h"
 #include "include/SpecificFlightManager.h"
 #include "include/FromToManager.h"
+#include "include/SpecificSearchManager.h"
 
 #include "spi_rp2350.h"
 #include "boostxl_eduMKII.h"
@@ -36,10 +37,12 @@ int main(){
 
     API api;
     List<Flight> flights = api.getTopFlights();
+    List<Flight> searchResults;
 
     SubmenuManager subManager(MAIN);
     SpecificFlightManager flightManager(api, drawer);
     FromToManager fromToManager; 
+    SpecificSearchManager searchManager;
     
     SubMenu lastSubMenu = subManager.getCurrentMenu();
     uint8_t lastIndex = subManager.getCurrentIndex();
@@ -47,6 +50,9 @@ int main(){
     uint8_t lastCursor = 99; 
     String lastFrom = "";
     String lastTo = "";
+    
+    uint8_t lastSearchCursor = 99;
+    String lastRawQuery = "";
 
     drawer.programSelecter(lastIndex);
 
@@ -62,6 +68,8 @@ int main(){
 
         if (currentMenu == FROM_TO) {
             fromToManager.handleInput(up, down, left, right);
+        } else if (currentMenu == SPECIFIC_INPUT) {
+            searchManager.handleInput(up, down, left, right);
         } else {
             if (up || down) subManager.handleNavigation(up, down);
             if (left || right) subManager.handleHorizontal(left, right);
@@ -70,11 +78,14 @@ int main(){
         if (select) {
             subManager.handleSelect();
             if (subManager.getCurrentMenu() == FROM_TO_SPECIFIC) {
-               // Hier würde man die Suche starten:
-
                 List<Flight> flight = api.getFlightsRoute(fromToManager.getFrom(), fromToManager.getTo());
                 logNumber(flight.size());
                 drawer.drawTable(flight, 0, false);
+            }
+            if (subManager.getCurrentMenu() == SPECIFIC_RESULT) {
+                searchResults = api.searchFlights(searchManager.getQuery());
+                logNumber(searchResults.size());
+                drawer.drawTable(searchResults, 1, false);
             }
         }
 
@@ -97,6 +108,14 @@ int main(){
                 lastCursor = fromToManager.getCursor();
                 lastFrom = fromToManager.getFrom();
                 lastTo = fromToManager.getTo();
+            }
+        }
+        if (currentSubMenu == SPECIFIC_INPUT) {
+            if (searchManager.getCursor() != lastSearchCursor ||
+                searchManager.getRawQuery() != lastRawQuery) {
+                inputChanged = true;
+                lastSearchCursor = searchManager.getCursor();
+                lastRawQuery = searchManager.getRawQuery();
             }
         }
 
@@ -123,6 +142,18 @@ int main(){
                 break;
             
             case FROM_TO_SPECIFIC:
+                break;
+            
+            case SPECIFIC_INPUT:
+                drawer.drawSearchMenu(searchManager.getRawQuery(), searchManager.getCursor());
+                break;
+            
+            case SPECIFIC_RESULT:
+                 drawer.drawTable(searchResults, currentIndex, false);
+                 break;
+            
+            case SPECIFIC_SHOW:
+                flightManager.handleDisplay(subManager, searchResults);
                 break;
 
             default:

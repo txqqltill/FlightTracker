@@ -17,7 +17,7 @@ public:
     SpecificFlightManager(API& api, Drawer& drawer) : _api(api), _drawer(drawer), _currentFlightId("") {}
 
     void handleDisplay(const SubmenuManager& subManager, List<Flight>& flights) {
-        if (subManager.getCurrentMenu() != TOP9_SPECIFIC) return;
+        if (subManager.getCurrentMenu() != TOP9_SPECIFIC && subManager.getCurrentMenu() != SPECIFIC_SHOW) return;
 
         uint8_t listIndex = subManager.getSelectedListIndex();
 
