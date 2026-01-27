@@ -25,7 +25,6 @@ private:
     void drawSubPage2();
     void drawSubPage3();
     void drawSubPage4();
-    void drawSubPage5();
 public:
     Drawer(st7735s_drv& lcd);
     void connectWifi();
@@ -36,6 +35,7 @@ public:
     void drawFromToMenu(const String& from, const String& to, uint8_t cursor);
     void drawSearchMenu(const String& query, uint8_t cursor);
     void programSelecter(const u_int8_t &index);
+    void drawLoading(const char buff[32]);
 
 };
 

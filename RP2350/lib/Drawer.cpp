@@ -233,10 +233,6 @@ void Drawer::drawSubPage4(){
     _gui.PutString(0, y, buff);
 }
 
-void Drawer::drawSubPage5(){
-    
-}
-
 void Drawer::drawSubPage(const uint8_t &pageCounter){
     _lcd.clearScreen(0x0);
 
@@ -255,9 +251,6 @@ void Drawer::drawSubPage(const uint8_t &pageCounter){
         break;
     case 4:
         drawSubPage4();
-        break;
-    case 5:
-        drawSubPage5();
         break;
     default:
         logError("Page not in range");
@@ -295,10 +288,9 @@ void Drawer::drawSubPageBottomBar(const uint8_t &pageCounter){
 }
 
 void Drawer::connectWifi(){
-    _lcd.clearScreen(0x0);
     char buff[64];
-    sniprintf(buff, sizeof(buff), "ESP8266 is connecting to the wifi '%s'", WIFI);
-    _gui.PutString(0, 0, buff);
+    snprintf(buff, sizeof(buff), "ESP8266 is connecting to the wifi '%s'", WIFI);
+    drawLoading(buff);
 }
 
 void Drawer::programSelecter(const u_int8_t &index){
@@ -368,4 +360,9 @@ void Drawer::drawSearchMenu(const String& query, uint8_t cursor) {
         char c = (i < query.size()) ? query[i] : ' ';
         _gui.PutChar(c, xStart + (i * spacing), yPos, C_WHITE, currentBg, true); 
     }
+}
+
+void Drawer::drawLoading(const char buff[32]){
+    _lcd.clearScreen(0x0);
+    _gui.PutString(0, 0, buff);
 }

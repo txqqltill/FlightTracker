@@ -5,13 +5,12 @@
 
 class FromToManager {
 private:
-    char _from[4]; // 3 Chars + Null-Terminator
+    char _from[4]; 
     char _to[4];
-    uint8_t _cursor; // 0-2 für FROM, 3-5 für TO
+    uint8_t _cursor;
 
 public:
     FromToManager() : _cursor(0) {
-        // Standardwerte (können auch leer sein)
         _from[0] = 'A'; _from[1] = 'A'; _from[2] = 'A'; _from[3] = '\0';
         _to[0]   = 'A'; _to[1] = 'A'; _to[2] = 'A'; _to[3] = '\0';
     }
@@ -44,7 +43,6 @@ public:
     String getTo() const { return String(_to); }
     uint8_t getCursor() const { return _cursor; }
     
-    // Reset Funktion falls nötig
     void reset() {
         _cursor = 0;
     }

@@ -78,6 +78,9 @@ int main(){
         if (select) {
             subManager.handleSelect();
             if (subManager.getCurrentMenu() == FROM_TO_SPECIFIC) {
+                char buff[64];
+                snprintf(buff, sizeof(buff), "Feaching Flights from %s to %s", fromToManager.getFrom().c_str(), fromToManager.getTo().c_str());
+                drawer.drawLoading(buff);
                 List<Flight> flight = api.getFlightsRoute(fromToManager.getFrom(), fromToManager.getTo());
                 logNumber(flight.size());
                 drawer.drawTable(flight, 0, false);
