@@ -42,6 +42,7 @@ int main(){
     logInfo("System: Fetching initial Top Flights...");
     List<Flight> flights = api.getTopFlights();
     List<Flight> searchResults;
+    List<Flight> routeFlights;
 
     SubmenuManager subManager(MAIN);
     SpecificFlightManager flightManager(api, drawer);
@@ -82,17 +83,20 @@ int main(){
 
         if (select) {
             logInfo("Input: Select Button Pressed");
+            SubMenu preSelectMenu = subManager.getCurrentMenu();
+            
             subManager.handleSelect();
-            if (subManager.getCurrentMenu() == FROM_TO_SPECIFIC) {
+            
+            if (preSelectMenu == FROM_TO && subManager.getCurrentMenu() == FROM_TO_SPECIFIC) {
                 char buff[64];
                 snprintf(buff, sizeof(buff), "Fetching Flights from %s to %s", fromToManager.getFrom().c_str(), fromToManager.getTo().c_str());
                 logInfo(buff);
                 drawer.drawLoading(buff);
-                List<Flight> flight = api.getFlightsRoute(fromToManager.getFrom(), fromToManager.getTo());
-                logFmt("Result: Found %d flights on route", flight.size());
-                drawer.drawTable(flight, 0, false);
+                routeFlights = api.getFlightsRoute(fromToManager.getFrom(), fromToManager.getTo());
+                logFmt("Result: Found %d flights on route", routeFlights.size());
+                drawer.drawTable(routeFlights, 0, false);
             }
-            if (subManager.getCurrentMenu() == SPECIFIC_RESULT) {
+            if (subManager.getCurrentMenu() == SPECIFIC_RESULT && preSelectMenu == SPECIFIC_INPUT) {
                 logFmt("Input: Executing Search for '%s'", searchManager.getQuery().c_str());
                 searchResults = api.searchFlights(searchManager.getQuery());
                 logFmt("Result: Found %d flights for search", searchResults.size());
@@ -157,6 +161,11 @@ int main(){
                 break;
             
             case FROM_TO_SPECIFIC:
+                drawer.drawTable(routeFlights, currentIndex, false);
+                break;
+            
+            case FROM_TO_SHOW:
+                flightManager.handleDisplay(subManager, routeFlights);
                 break;
             
             case SPECIFIC_INPUT:
