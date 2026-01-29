@@ -86,9 +86,9 @@ int main(){
             SubMenu preSelectMenu = subManager.getCurrentMenu();
             
             subManager.handleSelect();
+            char buff[64];
             
             if (preSelectMenu == FROM_TO && subManager.getCurrentMenu() == FROM_TO_SPECIFIC) {
-                char buff[64];
                 snprintf(buff, sizeof(buff), "Fetching Flights from %s to %s", fromToManager.getFrom().c_str(), fromToManager.getTo().c_str());
                 logInfo(buff);
                 drawer.drawLoading(buff);
@@ -97,7 +97,9 @@ int main(){
                 drawer.drawTable(routeFlights, 0, FROM_TO);
             }
             if (subManager.getCurrentMenu() == SPECIFIC_RESULT && preSelectMenu == SPECIFIC_INPUT) {
-                logFmt("Input: Executing Search for '%s'", searchManager.getQuery().c_str());
+                snprintf(buff, sizeof(buff), "Fetching Flights for Flight '%s'", searchManager.getQuery().c_str());
+                logInfo(buff);
+                drawer.drawLoading(buff);
                 searchResults = api.searchFlights(searchManager.getQuery());
                 logFmt("Result: Found %d flights for search", searchResults.size());
                 drawer.drawTable(searchResults, 1, FROM_TO_SPECIFIC);
