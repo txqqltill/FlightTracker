@@ -94,13 +94,13 @@ int main(){
                 drawer.drawLoading(buff);
                 routeFlights = api.getFlightsRoute(fromToManager.getFrom(), fromToManager.getTo());
                 logFmt("Result: Found %d flights on route", routeFlights.size());
-                drawer.drawTable(routeFlights, 0, false);
+                drawer.drawTable(routeFlights, 0, FROM_TO);
             }
             if (subManager.getCurrentMenu() == SPECIFIC_RESULT && preSelectMenu == SPECIFIC_INPUT) {
                 logFmt("Input: Executing Search for '%s'", searchManager.getQuery().c_str());
                 searchResults = api.searchFlights(searchManager.getQuery());
                 logFmt("Result: Found %d flights for search", searchResults.size());
-                drawer.drawTable(searchResults, 1, false);
+                drawer.drawTable(searchResults, 1, FROM_TO_SPECIFIC);
             }
         }
 
@@ -149,7 +149,7 @@ int main(){
                 break;
             
             case TOP9:
-                drawer.drawTable(flights, currentIndex, true);
+                drawer.drawTable(flights, currentIndex, TOP9);
                 break;
 
             case TOP9_SPECIFIC:
@@ -161,7 +161,7 @@ int main(){
                 break;
             
             case FROM_TO_SPECIFIC:
-                drawer.drawTable(routeFlights, currentIndex, false);
+                drawer.drawTable(routeFlights, currentIndex, FROM_TO_SPECIFIC);
                 break;
             
             case FROM_TO_SHOW:
@@ -173,8 +173,8 @@ int main(){
                 break;
             
             case SPECIFIC_RESULT:
-                 drawer.drawTable(searchResults, currentIndex, false);
-                 break;
+                drawer.drawTable(searchResults, currentIndex, SPECIFIC_RESULT);
+                break;
             
             case SPECIFIC_SHOW:
                 flightManager.handleDisplay(subManager, searchResults);

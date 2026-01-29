@@ -152,5 +152,4 @@ public:
         }
         logFmt("Nav: Back pressed -> New Menu: %d", _currentMenu);
     }
-
-#endif // SUBMENUMANGER_H};
+};
