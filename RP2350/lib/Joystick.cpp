@@ -37,7 +37,6 @@ Joystick::Joystick()
     _offsetX = _joyX.adcReadRaw();
     _joyY.adcMode(ADC::ADC_12_BIT);
     _offsetY = _joyY.adcReadRaw();
-    logInfo("Joystick created");
 }
 
 bool Joystick::MovedRight() {
@@ -49,8 +48,6 @@ bool Joystick::MovedRight() {
     
     while (isXNeutral() == false) {
     }
-    
-    logInfo("JoyX Right");
     return true;     
 }
 
@@ -63,8 +60,6 @@ bool Joystick::MovedLeft() {
     
     while (isXNeutral() == false) {
     }
-    
-    logInfo("JoyX Left");
     return true;     
 }
 
@@ -77,8 +72,6 @@ bool Joystick::MovedUp() {
     
     while (isYNeutral() == false) {
     }
-    
-    logInfo("JoyY Up");
     return true;        
 }
 
@@ -91,7 +84,5 @@ bool Joystick::MovedDown() {
     
     while (isYNeutral() == false) {
     }
-    
-    logInfo("JoyY Down");
     return true;     
 }

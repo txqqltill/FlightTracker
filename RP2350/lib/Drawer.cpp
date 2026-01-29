@@ -1,11 +1,14 @@
 #include "../include/Drawer.h"
 #include "../include/Log.h"
 #include "../include/MeasurementsConverter.h"
+#include "../include/JSONConverter.h"
+#include "../include/SubmenuManager.h"
 #include "../../secrets/Secrets.h"
 
 #include "uGUI.h"
 #include "font_4x6.h"
 #include "font_5x12.h"
+#include "font_5x8.h"
 #include "st7735s_drv.h"
 #include "yahal_String.h"
 #include <cstring> 
@@ -20,20 +23,37 @@ Drawer::Drawer(st7735s_drv& lcd)
     _gui.FontSelect(&defaultFont);
 
     _lcd.clearScreen(0x0);
+    logInfo("Drawer: Initialized");
 }
 
 void Drawer::colorArea(const uint8_t x1, const uint8_t y1, const uint8_t x2, const uint8_t y2){
     _gui.FillFrame(x1, y1, x2, y2, C_CYAN);
 }
 
-void Drawer::drawTable(const List<Flight> &flightList, const uint8_t selected){
+void Drawer::drawTable(const List<Flight> &flightList, const uint8_t selected, const SubMenu subMenu){
+    logFmt("Drawer: Drawing Table (subMenu=%d, Selected=%d)", subMenu, selected);
     _lcd.clearScreen(0x0);
     uint8_t x = 5;
     uint8_t y = 0;
-    char buff[4]; 
+    char buff[32]; 
     uint8_t counter = 1; 
 
-    _gui.PutString(x, y, "TOP 9 Flights");
+    if (subMenu == TOP9){
+        _gui.PutString(x, y, "TOP 9 Flights");
+    }
+    else if (subMenu == FROM_TO_SPECIFIC) {
+        auto first = flightList.get(1);
+        if (first.fromIata != DEFAULTSTRING) {
+            snprintf(buff, sizeof(buff), "Flights: %s --> %s", first.fromIata.c_str(), first.toIata.c_str()); 
+        } else {
+            snprintf(buff, sizeof(buff), "Search Results");
+        }
+        _gui.PutString(x, y, buff);
+    }
+    else {
+        snprintf(buff, sizeof(buff), "Results for CS: %s", flightList.get(1).callsign.c_str());
+        _gui.PutString(x, y, buff);
+    }
     y += 12;
     for (const auto& flight : flightList){
         _gui.DrawLine(0, y, 127, y, C_WHITE);
@@ -44,10 +64,16 @@ void Drawer::drawTable(const List<Flight> &flightList, const uint8_t selected){
         snprintf(buff, sizeof(buff), "%u", counter); 
         _gui.PutString(x, y, buff);
         x += 12;
-        _gui.PutString(x, y, flight.fromIata.c_str());
-        x += 30;
-        _gui.PutString(x, y, flight.toIata.c_str());
-        x += 30;
+        if (flight.fromIata != DEFAULTSTRING) {
+             _gui.PutString(x, y, flight.fromIata.c_str());
+             x += 30;
+             _gui.PutString(x, y, flight.toIata.c_str());
+             x += 30;
+        } else {
+             x += 5;
+             _gui.PutString(x, y, flight.flightNumber.c_str());
+             x += 55;
+        }
         _gui.PutString(x, y, flight.callsign.c_str());
         
         x = 5;
@@ -63,10 +89,10 @@ void Drawer::clearArea(const uint8_t x1, const uint8_t y1, const uint8_t x2, con
     uint8_t diffX = x1 - x2;
     uint8_t diffY = y1 - y2;
     if (diffX < 4) 
-        logWarning("Difference between x is smaller than the smallest font -> overwirting");
+        logWarning("Drawer: ClearArea dX too small -> overwriting");
 
     if (diffY < 6) 
-        logWarning("Difference between y is smaller than the smallest font -> overwirting");
+        logWarning("Drawer: ClearArea dY too small -> overwriting");
 
     _gui.FontSelect(&FONT_4X6);
     uint8_t widh = diffX / 4;
@@ -87,11 +113,11 @@ void Drawer::clearArea(const uint8_t x1, const uint8_t y1, const uint8_t x2, con
 }
 
 void Drawer::drawSubPage1(){
-    char buff[64];
+    char buff[128];
 
     const char* aircraft = _flightData.aircraftModel.text.c_str();
     if (strlen(aircraft) > MAXCHARSINLINE){
-        snprintf(buff, sizeof(buff), "Only the first %i Chars of %s will be displayed", MAXCHARSINLINE, aircraft);
+        snprintf(buff, sizeof(buff), "Drawer: Truncating aircraft name: %s", aircraft);
         logInfo(buff);
     }
     snprintf(buff, sizeof(buff), "%.21s", aircraft);
@@ -100,7 +126,7 @@ void Drawer::drawSubPage1(){
 
     const char* airline = _flightData.airline.airlineName.c_str();
     if (strlen(airline) > MAXCHARSINLINE * 2){
-        snprintf(buff, sizeof(buff), "Only the first %i Chars of '%s' will be displayed", MAXCHARSINLINE, airline);
+        snprintf(buff, sizeof(buff), "Drawer: Truncating airline name: %s", airline);
         logInfo(buff);
     }
     snprintf(buff, sizeof(buff), "%.42s", airline);
@@ -109,7 +135,7 @@ void Drawer::drawSubPage1(){
 
     const char* origienAirport = _flightData.originAirport.name.c_str();
     if (strlen(origienAirport) > MAXCHARSINLINE * 2){
-        snprintf(buff, sizeof(buff), "Only the first %i Chars of '%s' will be displayed", MAXCHARSINLINE * 2, origienAirport);
+        snprintf(buff, sizeof(buff), "Drawer: Truncating origin airport: %s", origienAirport);
         logInfo(buff);
     }
     snprintf(buff, sizeof(buff), "%.42s", origienAirport);
@@ -118,7 +144,7 @@ void Drawer::drawSubPage1(){
 
     const char* destinationAirport = _flightData.destinationAirport.name.c_str();
     if (strlen(destinationAirport) > MAXCHARSINLINE * 2){
-        snprintf(buff, sizeof(buff), "Only the first %i Chars of '%s' will be displayed", MAXCHARSINLINE * 2, destinationAirport);
+        snprintf(buff, sizeof(buff), "Drawer: Truncating dest airport: %s", destinationAirport);
         logInfo(buff);
     }
     snprintf(buff, sizeof(buff), "%.42s", destinationAirport);
@@ -214,10 +240,6 @@ void Drawer::drawSubPage4(){
     _gui.PutString(0, y, buff);
 }
 
-void Drawer::drawSubPage5(){
-    
-}
-
 void Drawer::drawSubPage(const uint8_t &pageCounter){
     _lcd.clearScreen(0x0);
 
@@ -237,24 +259,22 @@ void Drawer::drawSubPage(const uint8_t &pageCounter){
     case 4:
         drawSubPage4();
         break;
-    case 5:
-        drawSubPage5();
-        break;
     default:
-        logError("Page not in range");
+        logError("Drawer: Page not in range");
         break;
     }
 }
 
-void Drawer::addSubPageData(SpecificFlightData flightData){
+void Drawer::addSubPageData(const SpecificFlightData &flightData){
     _flightData = std::move(flightData);    
     drawSubPage(1);
 }
 
-void Drawer::initSubPage(const String &flightId){
+void Drawer::initSubPage(const String &flightId, const String &callsign){
+    logFmt("Drawer: Init SubPage for Flight %s (Callsign %s)", flightId.c_str(), callsign.c_str());
     _lcd.clearScreen(0x0);
-    char buff[64];
-    snprintf(buff, sizeof(buff), "Feaching data for flight with ID: %s", flightId.c_str());
+    char buff[128];
+    snprintf(buff, sizeof(buff), "Feaching data for flight with \nID: '%s' and \ncallsign '%s'\n", flightId.c_str(), callsign.c_str());
     _gui.PutString(0, 0, buff);
 }
 
@@ -276,8 +296,84 @@ void Drawer::drawSubPageBottomBar(const uint8_t &pageCounter){
 }
 
 void Drawer::connectWifi(){
-    _lcd.clearScreen(0x0);
     char buff[64];
-    sniprintf(buff, sizeof(buff), "ESP8266 is connecting to the wifi '%s'", WIFI);
+    snprintf(buff, sizeof(buff), "ESP8266 is connecting to the wifi '%s'", WIFI);
+    logInfo(buff);
+    drawLoading(buff);
+}
+
+void Drawer::programSelecter(const u_int8_t &index){
+    logFmt("Drawer: Drawing Main Menu (Index %d)", index);
+    _lcd.clearScreen(0x0);
+    _gui.PutString(20, 0, "Flight Tracker");
+    _gui.PutString(0, 15, "Chose your Mode");
+    _gui.DrawLine(0, 30, 127, 30, C_WHITE);
+    _gui.PutString(8, 32, "Top 9 Flight");
+    _gui.PutString(8, 47, "From --> To");
+    _gui.PutString(8, 62, "Specific Flight");
+    _gui.FontSelect(&FONT_5X8);
+    _gui.PutString(0, 95, "Use Joystick to move up/down press S1 to select & S2 to go back");
+    _gui.FontSelect(&defaultFont);
+    switch (index)
+    {
+    case 1:
+        colorArea(0, 30, 5, 45);
+        break;
+    case 2: 
+        colorArea(0, 45, 5, 60);
+        break;
+    case 3: 
+        colorArea(0, 60, 5, 75);
+        break;
+    default:
+        break;
+    }
+}
+
+void Drawer::drawFromToMenu(const String& from, const String& to, uint8_t cursor) {
+    _lcd.clearScreen(0x0);
+    
+    _gui.PutString(10, 10, "FROM -> TO");
+    
+    int yPos = 50;
+    int xStart = 10;
+    int spacing = 10;
+
+    for(int i=0; i<3; i++) {
+        UG_COLOR currentBg = (cursor == i) ? C_BLUE : C_BLACK;
+        
+        _gui.PutChar(from[i], xStart + (i * spacing), yPos, C_WHITE, currentBg, true); 
+    }
+
+    _gui.SetForecolor(C_WHITE);
+    _gui.SetBackcolor(C_BLACK);
+    _gui.PutString(xStart + (3 * spacing) + 5, yPos, "->");
+
+    int xStartTo = xStart + (3 * spacing) + 35;
+    for(int i=0; i<3; i++) {
+        UG_COLOR currentBg = (cursor == (i+3)) ? C_BLUE : C_BLACK;
+        
+        _gui.PutChar(to[i], xStartTo + (i * spacing), yPos, C_WHITE, currentBg, true);
+    }
+}
+
+void Drawer::drawSearchMenu(const String& query, uint8_t cursor) {
+    _lcd.clearScreen(0x0);
+    _gui.PutString(10, 10, "Specific Flight");
+    
+    int yPos = 50;
+    int xStart = 10;
+    int spacing = 10;
+
+    for(int i=0; i<7; i++) {
+        UG_COLOR currentBg = (cursor == i) ? C_BLUE : C_BLACK;
+        char c = (i < query.size()) ? query[i] : ' ';
+        _gui.PutChar(c, xStart + (i * spacing), yPos, C_WHITE, currentBg, true); 
+    }
+}
+
+void Drawer::drawLoading(const char buff[32]){
+    logFmt("Drawer: Loading Screen -> %s", buff);
+    _lcd.clearScreen(0x0);
     _gui.PutString(0, 0, buff);
 }

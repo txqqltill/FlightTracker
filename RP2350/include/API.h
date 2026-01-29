@@ -4,6 +4,7 @@
 #include "../TestData.h"
 #include "../FlightData/CacheEntry.h"
 #include "JSONConverter.h"
+#include "Log.h"
 
 #include "yahal_String.h"
 #include "posix_io.h"
@@ -52,7 +53,7 @@ public:
         task::sleep_ms(200);
         esp_reset.gpioWrite(HIGH);
         
-        printf("Warte auf ESP Boot & WiFi...\n");
+        logInfo("API: Waiting for ESP boot & WiFi connection...");
         
         task::sleep_ms(2500); 
         
@@ -68,17 +69,18 @@ public:
 
         if (_data_ready) {
             if (strstr(_raw_rx_buffer, "READY") != nullptr) {
-                printf("ESP Verbunden und Bereit!\n");
+                logInfo("API: ESP Connected and Ready!");
             } else {
-                printf("ESP Fehler/Unbekannt: %s\n", _raw_rx_buffer);
+                logFmt("API: ESP Error/Unknown State: %s", _raw_rx_buffer);
             }
             _data_ready = false;
         } else {
-            printf("ESP Timeout nach Wartezeit!\n");
+            logError("API: ESP Timeout during boot!");
         }
     }
 
     List<Flight> getTopFlights() {
+        logInfo("API: Requesting Top Flights (LIST)...");
         _cachedFlights.clear();
 
         _data_ready = false;
@@ -95,27 +97,98 @@ public:
         if (_data_ready) {
             _data_ready = false;
             
+            logFmt("API: Data received (%d bytes)", _rx_idx);
+
             if (strncmp(_raw_rx_buffer, "{\"error\"", 8) == 0) {
-                 printf("API Error: %s\n", _raw_rx_buffer);
-                 return List<Flight>();
+                logFmt("API Error: %s", _raw_rx_buffer);
+                return List<Flight>();
             }
 
             String jsonStr(_raw_rx_buffer);
             return parseJsonToFlightList(jsonStr.c_str());
         } 
         else {
-            printf("Timeout receiving LIST (Waited 15s)\n");
+            logWarning("API: Timeout receiving LIST (Waited 15s)");
+            return List<Flight>();
+        }
+    }
+
+    List<Flight> getFlightsRoute(const String &from, const String &to) {
+        logFmt("API: Requesting Route %s -> %s", from.c_str(), to.c_str());
+        _cachedFlights.clear(); 
+
+        _data_ready = false;
+        _rx_idx = 0; 
+        
+        String cmd = "ROUTE:" + from + ":" + to + "\n";
+        _uart_esp.puts(cmd.c_str());
+
+        int timeout = 0;
+        while (_data_ready == false && timeout < 1500) { 
+            task::sleep_ms(10);
+            timeout++;
+        }
+
+        if (_data_ready) {
+            _data_ready = false;
+            logFmt("API: Route Data received (%d bytes)", _rx_idx);
+            
+            if (strncmp(_raw_rx_buffer, "{\"error\"", 8) == 0) {
+                logFmt("API Error (Route): %s", _raw_rx_buffer);
+                return List<Flight>();
+            }
+
+            String jsonStr(_raw_rx_buffer);
+            return parseJsonToFlightList(jsonStr.c_str());
+        } 
+        else {
+            logWarning("API: Timeout receiving ROUTE (Waited 15s)");
+            return List<Flight>();
+        }
+    }
+    
+    List<Flight> searchFlights(const String &query) {
+        logFmt("API: Searching for Flight '%s'", query.c_str());
+        _cachedFlights.clear();
+        _data_ready = false;
+        _rx_idx = 0;
+
+        String cmd = "SEARCH:" + query + "\n";
+        _uart_esp.puts(cmd.c_str());
+
+        int timeout = 0;
+        while (_data_ready == false && timeout < 1500) { 
+            task::sleep_ms(10);
+            timeout++;
+        }
+
+        if (_data_ready) {
+            _data_ready = false;
+            logFmt("API: Search Data received (%d bytes)", _rx_idx);
+
+            if (strncmp(_raw_rx_buffer, "{\"error\"", 8) == 0) {
+                logError(_raw_rx_buffer);
+                return List<Flight>();
+            }
+            String jsonStr(_raw_rx_buffer);
+            return parseSearchJsonToFlightList(jsonStr.c_str());
+        } else {
+            logWarning("API: Timeout receiving SEARCH");
             return List<Flight>();
         }
     }
 
     SpecificFlightData getSpecificFlightData(const String &flightId){
+        logFmt("API: Requesting details for FlightID %s", flightId.c_str());
+        
         for(const auto& entry : _cachedFlights){
             if(entry.flightId == flightId){
+                logInfo("API: Found flight details in cache");
                 return parseJsonToSpecificFlightData(entry.jsonData.c_str());
             }
         }
 
+        logInfo("API: Not in cache, fetching from ESP...");
         _data_ready = false;
         _rx_idx = 0;
         
@@ -132,6 +205,7 @@ public:
 
         if (_data_ready) {
             _data_ready = false;
+            logFmt("API: Detail Data received (%d bytes)", _rx_idx);
             
             FlightCacheEntry entry;
             entry.flightId = flightId;
@@ -145,7 +219,7 @@ public:
             while (endSearch >= 0) {
                 char c = _raw_rx_buffer[endSearch];
                 if (c == '}') {
-                    printf("Timeout Recovery: JSON Ende '}' gefunden an Pos %d. Parse Daten...\n", endSearch);
+                    logInfo("API: Timeout Recovery: Found JSON end brace");
                     _raw_rx_buffer[endSearch + 1] = 0;
                     String jsonString = String(_raw_rx_buffer);
                     
@@ -160,7 +234,8 @@ public:
             }
         }
 
-        printf("Timeout & kein valides JSON gefunden. Bytes: %d\n", _rx_idx);
+        logError("API: Timeout & No valid JSON found for Details");
+        logNumber(_rx_idx);
         return SpecificFlightData(); 
     }
 };
@@ -168,4 +243,4 @@ public:
 char API::_raw_rx_buffer[RX_BUF_SIZE];
 volatile int API::_rx_idx = 0;
 
-#endif
+#endif // API_H

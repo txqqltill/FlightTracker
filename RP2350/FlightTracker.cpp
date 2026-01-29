@@ -5,15 +5,18 @@
 #include "include/Button.h"
 #include "include/API.h"
 #include "include/Timer.h"
+#include "include/SubmenuManager.h"
+#include "include/SpecificFlightManager.h"
+#include "include/FromToManager.h"
+#include "include/SpecificSearchManager.h"
 
 #include "spi_rp2350.h"
 #include "boostxl_eduMKII.h"
 #include "board.h"
 
-#define DISPLAY_LIMIT 9
-
 int main(){
     initLogger();
+    logInfo("System: Booting FlightTracker...");
 
     gpio_rp2350 lcd_bl(EDU_LCD_BL);
     lcd_bl.gpioMode(GPIO::OUTPUT | GPIO::INIT_HIGH);
@@ -29,84 +32,159 @@ int main(){
     Drawer drawer(lcd);
     drawer.connectWifi();
 
-    uint8_t index = 1;
-    
     Joystick joy;
-
     Button s1(EDU_BUTTON1);
     Button s2(EDU_BUTTON2);
-    Button s3(S2_GPIO);
 
-    bool inSubMenu = false;
-    uint8_t subPageCounter = 0;
+    logInfo("System: Initializing API...");
     API api;
+    
+    logInfo("System: Fetching initial Top Flights...");
     List<Flight> flights = api.getTopFlights();
+    List<Flight> searchResults;
+    List<Flight> routeFlights;
 
-    Timer apiTimer(flights);
-    apiTimer.start();
+    SubmenuManager subManager(MAIN);
+    SpecificFlightManager flightManager(api, drawer);
+    FromToManager fromToManager; 
+    SpecificSearchManager searchManager;
+    
+    SubMenu lastSubMenu = subManager.getCurrentMenu();
+    uint8_t lastIndex = subManager.getCurrentIndex();
+    
+    uint8_t lastCursor = 99; 
+    String lastFrom = "";
+    String lastTo = "";
+    
+    uint8_t lastSearchCursor = 99;
+    String lastRawQuery = "";
 
-    drawer.drawTable(flights, index);
+    drawer.programSelecter(lastIndex);
+    logInfo("System: Main Loop Started");
 
     while (1) {
         bool right = joy.MovedRight();
         bool left = joy.MovedLeft();
         bool down = joy.MovedDown();
         bool up = joy.MovedUp();
-        bool draw_needed = false;
-
-        if (s1.pressed() && subPageCounter == 0){
-            inSubMenu = true;
-            subPageCounter = 1;
-            Flight flight = flights.get(index - 1);
-            auto id = flight.flightId;
-            drawer.initSubPage(id);
-            SpecificFlightData data = api.getSpecificFlightData(flight.flightId);
-            drawer.addSubPageData(std::move(data));
-        }
-
-        if (s2.pressed() && subPageCounter != 0){
-            inSubMenu = false;
-            draw_needed = true;
-            subPageCounter = 0;
-        }
-
-        if (s3.pressed()){
-            apiTimer.reset();
-            flights = api.getTopFlights();
-        }
-
-        if (down && inSubMenu == false) {
-            if (index < DISPLAY_LIMIT) {
-                index++;
-                draw_needed = true;
-            }
-        }
-
-        if (right && subPageCounter >= 1){
-            subPageCounter++;
-            if (subPageCounter > MAXSUBPAGE) 
-                subPageCounter = MAXSUBPAGE;
-
-            drawer.drawSubPage(subPageCounter);
-        }
-
-        if (left && subPageCounter >= 1){
-            subPageCounter--;
-            if (subPageCounter <= 0)
-                subPageCounter = 1;
-            
-            drawer.drawSubPage(subPageCounter);
-        }
+        bool select = s1.pressed();
+        bool back = s2.pressed();
         
-        if (up && inSubMenu == false) {
-            if (index > 1) {
-                index--;
-                draw_needed = true;
+        SubMenu currentMenu = subManager.getCurrentMenu();
+
+        if (currentMenu == FROM_TO) {
+            fromToManager.handleInput(up, down, left, right);
+        } else if (currentMenu == SPECIFIC_INPUT) {
+            searchManager.handleInput(up, down, left, right);
+        } else {
+            if (up || down) subManager.handleNavigation(up, down);
+            if (left || right) subManager.handleHorizontal(left, right);
+        }
+
+        if (select) {
+            logInfo("Input: Select Button Pressed");
+            SubMenu preSelectMenu = subManager.getCurrentMenu();
+            
+            subManager.handleSelect();
+            char buff[64];
+            
+            if (preSelectMenu == FROM_TO && subManager.getCurrentMenu() == FROM_TO_SPECIFIC) {
+                snprintf(buff, sizeof(buff), "Fetching Flights from %s to %s", fromToManager.getFrom().c_str(), fromToManager.getTo().c_str());
+                logInfo(buff);
+                drawer.drawLoading(buff);
+                routeFlights = api.getFlightsRoute(fromToManager.getFrom(), fromToManager.getTo());
+                logFmt("Result: Found %d flights on route", routeFlights.size());
+                drawer.drawTable(routeFlights, 0, FROM_TO);
+            }
+            if (subManager.getCurrentMenu() == SPECIFIC_RESULT && preSelectMenu == SPECIFIC_INPUT) {
+                snprintf(buff, sizeof(buff), "Fetching Flights for Flight '%s'", searchManager.getQuery().c_str());
+                logInfo(buff);
+                drawer.drawLoading(buff);
+                searchResults = api.searchFlights(searchManager.getQuery());
+                logFmt("Result: Found %d flights for search", searchResults.size());
+                drawer.drawTable(searchResults, 1, FROM_TO_SPECIFIC);
             }
         }
 
-        if (draw_needed) {
-            drawer.drawTable(flights, index);
+        if (back) {
+            logInfo("Input: Back Button Pressed");
+            subManager.handleBack();
+        }
+
+        SubMenu currentSubMenu = subManager.getCurrentMenu();
+        uint8_t currentIndex = subManager.getCurrentIndex();
+        
+        bool menuChanged = (currentSubMenu != lastSubMenu);
+        bool indexChanged = (currentIndex != lastIndex);
+        
+        bool inputChanged = false;
+        if (currentSubMenu == FROM_TO) {
+            if (fromToManager.getCursor() != lastCursor || 
+                fromToManager.getFrom() != lastFrom || 
+                fromToManager.getTo() != lastTo) {
+                inputChanged = true;
+                lastCursor = fromToManager.getCursor();
+                lastFrom = fromToManager.getFrom();
+                lastTo = fromToManager.getTo();
+            }
+        }
+        if (currentSubMenu == SPECIFIC_INPUT) {
+            if (searchManager.getCursor() != lastSearchCursor ||
+                searchManager.getRawQuery() != lastRawQuery) {
+                inputChanged = true;
+                lastSearchCursor = searchManager.getCursor();
+                lastRawQuery = searchManager.getRawQuery();
+            }
+        }
+
+        if (menuChanged || indexChanged || inputChanged) {
+            if (menuChanged) logFmt("UI: Menu Changed to ID %d", currentSubMenu);
+            if (indexChanged) logFmt("UI: Selection Index Changed to %d", currentIndex);
+
+            lastSubMenu = currentSubMenu;
+            lastIndex = currentIndex;
+
+            switch (currentSubMenu)
+            {
+            case MAIN:
+                drawer.programSelecter(currentIndex);
+                break;
+            
+            case TOP9:
+                drawer.drawTable(flights, currentIndex, TOP9);
+                break;
+
+            case TOP9_SPECIFIC:
+                flightManager.handleDisplay(subManager, flights);
+                break;
+
+            case FROM_TO:
+                drawer.drawFromToMenu(fromToManager.getFrom(), fromToManager.getTo(), fromToManager.getCursor());
+                break;
+            
+            case FROM_TO_SPECIFIC:
+                drawer.drawTable(routeFlights, currentIndex, FROM_TO_SPECIFIC);
+                break;
+            
+            case FROM_TO_SHOW:
+                flightManager.handleDisplay(subManager, routeFlights);
+                break;
+            
+            case SPECIFIC_INPUT:
+                drawer.drawSearchMenu(searchManager.getRawQuery(), searchManager.getCursor());
+                break;
+            
+            case SPECIFIC_RESULT:
+                drawer.drawTable(searchResults, currentIndex, SPECIFIC_RESULT);
+                break;
+            
+            case SPECIFIC_SHOW:
+                flightManager.handleDisplay(subManager, searchResults);
+                break;
+
+            default:
+                break;
+            }
         }
     }
 }

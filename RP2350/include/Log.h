@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdio>
+#include <cstdarg>
 #include "uart_rp2350.h"
 #include "posix_io.h"
 #include "yahal_String.h"
@@ -13,6 +14,7 @@ inline void initLogger() {
     posix_io::inst.register_stdout(uart);
     posix_io::inst.register_stderr(uart);
     printf(VT100_COLOR "\n", ATTR_OFF);
+    printf("INF | Logger Initialized\n");
 }
 
 inline void logInfo(const char* msg) {
@@ -25,6 +27,15 @@ inline void logWarning(const char* msg){
 
 inline void logError(const char* msg){
     printf("ERR | %s\n", msg);
+}
+
+inline void logFmt(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    printf("INF | ");
+    vprintf(format, args);
+    printf("\n");
+    va_end(args);
 }
 
 inline void logNumber(int8_t value) {

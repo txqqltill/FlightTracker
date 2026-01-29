@@ -1,0 +1,51 @@
+#ifndef SPECIFICFLIGHTMANAGER_H
+#define SPECIFICFLIGHTMANAGER_H
+
+#include "API.h"
+#include "Drawer.h"
+#include "SubmenuManager.h"
+#include "List.h"
+#include "../FlightData/Flight.h"
+#include "Log.h"
+
+class SpecificFlightManager {
+private:
+    API& _api;
+    Drawer& _drawer;
+    String _currentFlightId;
+
+public:
+    SpecificFlightManager(API& api, Drawer& drawer) : _api(api), _drawer(drawer), _currentFlightId("") {}
+
+    void handleDisplay(const SubmenuManager& subManager, List<Flight>& flights) {
+        SubMenu menu = subManager.getCurrentMenu();
+        
+        if (menu != TOP9_SPECIFIC && menu != SPECIFIC_SHOW && menu != FROM_TO_SHOW) return;
+
+        uint8_t listIndex = subManager.getSelectedListIndex();
+
+        if (listIndex < 1 || listIndex > flights.size()) return;
+
+        Flight flight = flights.get(listIndex - 1);
+
+        if (_currentFlightId != flight.flightId) {
+            logFmt("FlightMgr: Switching to new Flight ID %s (Callsign %s)", flight.flightId.c_str(), flight.callsign.c_str());
+            _currentFlightId = flight.flightId;
+
+            _drawer.initSubPage(flight.flightId, flight.callsign);
+
+            SpecificFlightData data = _api.getSpecificFlightData(flight.flightId);
+
+            _drawer.addSubPageData(data);
+        }
+
+        _drawer.drawSubPage(subManager.getCurrentIndex());
+    }
+    
+    void reset() {
+        logInfo("FlightMgr: Reset selection");
+        _currentFlightId = "";
+    }
+};
+
+#endif // SPECIFICFLIGHTMANAGER_H

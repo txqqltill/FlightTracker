@@ -119,7 +119,7 @@ public:
         count++;
     }
 
-    T& get(int index) {
+    T& get(int index) const{
         if (index < 0 || index >= count) {
             logError("Index out of range.");
         }
