@@ -16,6 +16,7 @@
 
 int main(){
     initLogger();
+    logInfo("System: Booting FlightTracker...");
 
     gpio_rp2350 lcd_bl(EDU_LCD_BL);
     lcd_bl.gpioMode(GPIO::OUTPUT | GPIO::INIT_HIGH);
@@ -35,7 +36,10 @@ int main(){
     Button s1(EDU_BUTTON1);
     Button s2(EDU_BUTTON2);
 
+    logInfo("System: Initializing API...");
     API api;
+    
+    logInfo("System: Fetching initial Top Flights...");
     List<Flight> flights = api.getTopFlights();
     List<Flight> searchResults;
 
@@ -55,6 +59,7 @@ int main(){
     String lastRawQuery = "";
 
     drawer.programSelecter(lastIndex);
+    logInfo("System: Main Loop Started");
 
     while (1) {
         bool right = joy.MovedRight();
@@ -76,23 +81,27 @@ int main(){
         }
 
         if (select) {
+            logInfo("Input: Select Button Pressed");
             subManager.handleSelect();
             if (subManager.getCurrentMenu() == FROM_TO_SPECIFIC) {
                 char buff[64];
-                snprintf(buff, sizeof(buff), "Feaching Flights from %s to %s", fromToManager.getFrom().c_str(), fromToManager.getTo().c_str());
+                snprintf(buff, sizeof(buff), "Fetching Flights from %s to %s", fromToManager.getFrom().c_str(), fromToManager.getTo().c_str());
+                logInfo(buff);
                 drawer.drawLoading(buff);
                 List<Flight> flight = api.getFlightsRoute(fromToManager.getFrom(), fromToManager.getTo());
-                logNumber(flight.size());
+                logFmt("Result: Found %d flights on route", flight.size());
                 drawer.drawTable(flight, 0, false);
             }
             if (subManager.getCurrentMenu() == SPECIFIC_RESULT) {
+                logFmt("Input: Executing Search for '%s'", searchManager.getQuery().c_str());
                 searchResults = api.searchFlights(searchManager.getQuery());
-                logNumber(searchResults.size());
+                logFmt("Result: Found %d flights for search", searchResults.size());
                 drawer.drawTable(searchResults, 1, false);
             }
         }
 
         if (back) {
+            logInfo("Input: Back Button Pressed");
             subManager.handleBack();
         }
 
@@ -123,6 +132,9 @@ int main(){
         }
 
         if (menuChanged || indexChanged || inputChanged) {
+            if (menuChanged) logFmt("UI: Menu Changed to ID %d", currentSubMenu);
+            if (indexChanged) logFmt("UI: Selection Index Changed to %d", currentIndex);
+
             lastSubMenu = currentSubMenu;
             lastIndex = currentIndex;
 

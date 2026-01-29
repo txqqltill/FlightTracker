@@ -195,7 +195,7 @@ void loop() {
                 to.trim();
                 
                 if (from.length() > 0 && to.length() > 0) {
-                    String url = "https://flight-radar8.p.rapidapi.com/flights/flight-by-route?airportFrom=" + from + "&airportTo=" + to + "&limit=9";
+                    String url = "https://flight-radar8.p.rapidapi.com/flights/flight-by-route?airportFrom=" + from + "&airportTo=" + to;
                     performRequest(url, "flight-radar8.p.rapidapi.com", false);
                 }
             }

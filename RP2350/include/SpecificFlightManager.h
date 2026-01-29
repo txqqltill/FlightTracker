@@ -6,6 +6,7 @@
 #include "SubmenuManager.h"
 #include "List.h"
 #include "../FlightData/Flight.h"
+#include "Log.h"
 
 class SpecificFlightManager {
 private:
@@ -26,6 +27,7 @@ public:
         Flight flight = flights.get(listIndex - 1);
 
         if (_currentFlightId != flight.flightId) {
+            logFmt("FlightMgr: Switching to new Flight ID %s (Callsign %s)", flight.flightId.c_str(), flight.callsign.c_str());
             _currentFlightId = flight.flightId;
 
             _drawer.initSubPage(flight.flightId, flight.callsign);
@@ -39,6 +41,7 @@ public:
     }
     
     void reset() {
+        logInfo("FlightMgr: Reset selection");
         _currentFlightId = "";
     }
 };

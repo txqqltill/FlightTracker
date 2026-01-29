@@ -66,4 +66,4 @@ public:
     }
 };
 
-#endif
+#endif // SPECIFICSEARCHMANAGER_H

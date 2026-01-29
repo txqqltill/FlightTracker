@@ -314,10 +314,10 @@ inline List<Flight> parseSearchJsonToFlightList(const char* json_string) {
                 if (detail) {
                     flight.callsign = get_cjson_string(detail, "callsign");
                     flight.flightNumber = get_cjson_string(detail, "flight");
-                    flight.model = DEFAULTSTRING; 
+                    flight.model = get_cjson_string(detail, "ac_type"); 
                     flight.type = get_cjson_string(item, "type");
-                    flight.fromIata = DEFAULTSTRING;
-                    flight.toIata = DEFAULTSTRING;
+                    flight.fromIata = get_cjson_string(detail, "schd_from");
+                    flight.toIata = get_cjson_string(detail, "schd_to");
                     flight.fromCity = DEFAULTSTRING;
                     flight.toCity = DEFAULTSTRING;
                 }
