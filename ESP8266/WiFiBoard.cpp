@@ -5,6 +5,8 @@
 
 #include "../secrets/Secrets.h"
 
+#define APIHOST "flight-radar1.p.rapidapi.com" 
+
 String inputString = "";
 bool stringComplete = false;
 
