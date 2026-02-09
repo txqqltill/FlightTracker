@@ -20,7 +20,7 @@ The ESP8266 acts as a network bridge for the RP2350.
 
 ### 3. RP2350 Main Controller
 * The main application logic resides in `RP2350/FlightTracker.cpp`.
-* Compile and flash this file onto your RP2350 using the YAHAL framework.
+* Compile and flash this file onto your RP2350 using the [YAHAL framework](https://git.fh-aachen.de/Terstegge/YAHAL).
 
 ## Architecture
 
